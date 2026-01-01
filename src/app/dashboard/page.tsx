@@ -73,6 +73,7 @@ export default function DashboardPage() {
   const [progress, setProgress] = useState<{ book: string; chapter: number }[]>([]);
   const [reflections, setReflections] = useState<{ id: string; book: string; chapter: number; content: string; createdAt: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyVerse, setDailyVerse] = useState({ text: "", reference: "" });
   const notifications = 0;
 
   useEffect(() => {
@@ -85,9 +86,10 @@ export default function DashboardPage() {
     async function fetchData() {
       if (!session) return;
       try {
-        const [progressRes, reflectionsRes] = await Promise.all([
+        const [progressRes, reflectionsRes, verseRes] = await Promise.all([
           fetch("/api/progress"),
-          fetch("/api/reflections")
+          fetch("/api/reflections"),
+          fetch("/api/verse-of-day"),
         ]);
         
         if (progressRes.ok) {
@@ -98,6 +100,11 @@ export default function DashboardPage() {
         if (reflectionsRes.ok) {
           const reflectionsData = await reflectionsRes.json();
           setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
+        }
+        
+        if (verseRes.ok) {
+          const verseData = await verseRes.json();
+          setDailyVerse({ text: verseData.text, reference: verseData.reference });
         }
       } catch (err) {
         console.error(err);
