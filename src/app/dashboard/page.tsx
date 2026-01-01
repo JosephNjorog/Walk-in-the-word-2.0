@@ -37,10 +37,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { BIBLE_BOOKS } from "@/lib/bible-utils";
 
-const dailyVerse = {
-  text: "Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
-  reference: "Proverbs 3:5-6",
-};
+
 
 const TOTAL_CHAPTERS = 1189;
 

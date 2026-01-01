@@ -22,18 +22,23 @@ import {
   Bell,
   Lock,
   BookOpen,
-  Globe,
   Trash2,
   Save,
-  Moon,
-  Sun,
   Loader2,
+  Clock,
+  Sparkles,
+  Type,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notificationsSupported, setNotificationsSupported] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
+  
   const [settings, setSettings] = useState({
     name: "",
     username: "",
@@ -45,15 +50,32 @@ export default function SettingsPage() {
     profileVisibility: "partners",
   });
 
+  const [readingPrefs, setReadingPrefs] = useState({
+    fontSize: 18,
+    fontFamily: "serif",
+    theme: "light",
+    notificationsEnabled: true,
+    dailyReminderTime: "08:00",
+  });
+
   useEffect(() => {
     fetchSettings();
+    
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationsSupported(true);
+      setNotificationPermission(Notification.permission);
+    }
   }, []);
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch("/api/profile");
-      if (res.ok) {
-        const data = await res.json();
+      const [profileRes, prefsRes] = await Promise.all([
+        fetch("/api/profile"),
+        fetch("/api/preferences"),
+      ]);
+      
+      if (profileRes.ok) {
+        const data = await profileRes.json();
         setSettings({
           name: data.name || "",
           username: data.username || "",
@@ -61,8 +83,19 @@ export default function SettingsPage() {
           bio: data.bio || "",
           preferredVersion: data.preferredVersion || "KJV",
           readingPace: data.readingPace || 1,
-          emailNotifications: true, // Placeholder until schema updated
-          profileVisibility: "partners", // Placeholder until schema updated
+          emailNotifications: true,
+          profileVisibility: "partners",
+        });
+      }
+      
+      if (prefsRes.ok) {
+        const prefs = await prefsRes.json();
+        setReadingPrefs({
+          fontSize: prefs.fontSize || 18,
+          fontFamily: prefs.fontFamily || "serif",
+          theme: prefs.theme || "light",
+          notificationsEnabled: prefs.notificationsEnabled ?? true,
+          dailyReminderTime: prefs.dailyReminderTime || "08:00",
         });
       }
     } catch (error) {
@@ -72,24 +105,81 @@ export default function SettingsPage() {
     }
   };
 
+  const requestNotificationPermission = async () => {
+    if (!notificationsSupported) return;
+    
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission === "granted") {
+        toast.success("Notifications enabled!");
+        
+        new Notification("Walk in the Word", {
+          body: "You'll now receive daily verse reminders!",
+          icon: "/icons/icon-192x192.png",
+        });
+        
+        setReadingPrefs({ ...readingPrefs, notificationsEnabled: true });
+        await savePreferences({ notificationsEnabled: true });
+      } else {
+        toast.error("Notification permission denied");
+      }
+    } catch (error) {
+      toast.error("Failed to enable notifications");
+    }
+  };
+
+  const savePreferences = async (prefs: Partial<typeof readingPrefs>) => {
+    try {
+      await fetch("/api/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(prefs),
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
+      const [profileRes, prefsRes] = await Promise.all([
+        fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(settings),
+        }),
+        fetch("/api/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(readingPrefs),
+        }),
+      ]);
 
-      if (res.ok) {
+      if (profileRes.ok && prefsRes.ok) {
         toast.success("Settings saved successfully!");
       } else {
-        toast.error("Failed to save settings");
+        toast.error("Failed to save some settings");
       }
     } catch (error) {
       toast.error("An error occurred");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const sendTestNotification = () => {
+    if (notificationPermission === "granted") {
+      fetch("/api/verse-of-day")
+        .then(res => res.json())
+        .then(verse => {
+          new Notification("Verse of the Day", {
+            body: `"${verse.text.substring(0, 100)}..." - ${verse.reference}`,
+            icon: "/icons/icon-192x192.png",
+          });
+        });
     }
   };
 
@@ -233,6 +323,67 @@ export default function SettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Type className="h-4 w-4" />
+                    Font Size
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm">A</span>
+                    <input
+                      type="range"
+                      min={14}
+                      max={28}
+                      step={2}
+                      value={readingPrefs.fontSize}
+                      onChange={(e) => setReadingPrefs({ ...readingPrefs, fontSize: parseInt(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <span className="text-lg">A</span>
+                    <span className="text-sm text-muted-foreground w-8">{readingPrefs.fontSize}px</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Font Style</Label>
+                  <Select
+                    value={readingPrefs.fontFamily}
+                    onValueChange={(value) => setReadingPrefs({ ...readingPrefs, fontFamily: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="serif">Serif (Classic)</SelectItem>
+                      <SelectItem value="sans">Sans-serif (Modern)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Reading Theme</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "light", icon: Sun, label: "Light" },
+                      { id: "sepia", icon: BookOpen, label: "Sepia" },
+                      { id: "dark", icon: Moon, label: "Dark" },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setReadingPrefs({ ...readingPrefs, theme: t.id })}
+                        className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                          readingPrefs.theme === t.id
+                            ? "border-primary bg-primary/10"
+                            : "border-muted hover:border-primary/50"
+                        }`}
+                      >
+                        <t.icon className="h-5 w-5" />
+                        <span className="text-xs">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -240,15 +391,87 @@ export default function SettingsPage() {
           <TabsContent value="notifications" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Choose what notifications you receive</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  Verse of the Day Notifications
+                </CardTitle>
+                <CardDescription>
+                  Receive daily Scripture to start your morning
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {notificationsSupported ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Push Notifications</p>
+                        <p className="text-sm text-muted-foreground">
+                          {notificationPermission === "granted" 
+                            ? "Notifications are enabled" 
+                            : "Enable browser notifications"}
+                        </p>
+                      </div>
+                      {notificationPermission === "granted" ? (
+                        <Switch
+                          checked={readingPrefs.notificationsEnabled}
+                          onCheckedChange={(checked) =>
+                            setReadingPrefs({ ...readingPrefs, notificationsEnabled: checked })
+                          }
+                        />
+                      ) : (
+                        <Button onClick={requestNotificationPermission} variant="outline" size="sm">
+                          <Bell className="h-4 w-4 mr-2" />
+                          Enable
+                        </Button>
+                      )}
+                    </div>
+
+                    {notificationPermission === "granted" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Daily Reminder Time
+                          </Label>
+                          <Input
+                            type="time"
+                            value={readingPrefs.dailyReminderTime}
+                            onChange={(e) => setReadingPrefs({ ...readingPrefs, dailyReminderTime: e.target.value })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            You&apos;ll receive the Verse of the Day at this time
+                          </p>
+                        </div>
+
+                        <Button variant="outline" onClick={sendTestNotification} className="w-full">
+                          <Bell className="h-4 w-4 mr-2" />
+                          Send Test Notification
+                        </Button>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Push notifications are not supported in this browser
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle>Email Notifications</CardTitle>
+                <CardDescription>Choose what emails you receive</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Email Notifications</p>
+                    <p className="font-medium">Daily Reading Reminder</p>
                     <p className="text-sm text-muted-foreground">
-                      Receive daily reminders via email
+                      Receive a daily email reminder to read
                     </p>
                   </div>
                   <Switch
