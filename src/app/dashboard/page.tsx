@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
   Plus,
   Loader2,
+  Bookmark,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,10 +37,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { BIBLE_BOOKS } from "@/lib/bible-utils";
 
-const dailyVerse = {
-  text: "Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
-  reference: "Proverbs 3:5-6",
-};
+
 
 const TOTAL_CHAPTERS = 1189;
 
@@ -75,6 +73,7 @@ export default function DashboardPage() {
   const [progress, setProgress] = useState<{ book: string; chapter: number }[]>([]);
   const [reflections, setReflections] = useState<{ id: string; book: string; chapter: number; content: string; createdAt: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyVerse, setDailyVerse] = useState({ text: "", reference: "" });
   const notifications = 0;
 
   useEffect(() => {
@@ -87,9 +86,10 @@ export default function DashboardPage() {
     async function fetchData() {
       if (!session) return;
       try {
-        const [progressRes, reflectionsRes] = await Promise.all([
+        const [progressRes, reflectionsRes, verseRes] = await Promise.all([
           fetch("/api/progress"),
-          fetch("/api/reflections")
+          fetch("/api/reflections"),
+          fetch("/api/verse-of-day"),
         ]);
         
         if (progressRes.ok) {
@@ -100,6 +100,11 @@ export default function DashboardPage() {
         if (reflectionsRes.ok) {
           const reflectionsData = await reflectionsRes.json();
           setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
+        }
+        
+        if (verseRes.ok) {
+          const verseData = await verseRes.json();
+          setDailyVerse({ text: verseData.text, reference: verseData.reference });
         }
       } catch (err) {
         console.error(err);
@@ -253,12 +258,14 @@ export default function DashboardPage() {
             <Card className="border-0 shadow-lg">
               <CardContent className="p-4">
                 <nav className="space-y-1">
-                  {[
-                    { icon: BookOpen, label: "My Reflections", href: "/reflections" },
-                    { icon: TrendingUp, label: "Reading Plan", href: "/progress" },
-                    { icon: Award, label: "Achievements", href: "/profile" },
-                    { icon: Users, label: "Partnerships", href: "/partnerships" },
-                  ].map((item) => (
+                    {[
+                      { icon: BookOpen, label: "My Reflections", href: "/reflections" },
+                      { icon: TrendingUp, label: "Reading Plan", href: "/progress" },
+                      { icon: Award, label: "Achievements", href: "/profile" },
+                      { icon: Users, label: "Partnerships", href: "/partnerships" },
+                      { icon: Heart, label: "Prayer Wall", href: "/prayers" },
+                      { icon: Bookmark, label: "My Vault", href: "/bookmarks" },
+                    ].map((item) => (
                     <Link
                       key={item.label}
                       href={item.href}
