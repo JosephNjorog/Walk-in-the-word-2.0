@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
   Plus,
   Loader2,
+  Bookmark,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -253,12 +254,14 @@ export default function DashboardPage() {
             <Card className="border-0 shadow-lg">
               <CardContent className="p-4">
                 <nav className="space-y-1">
-                  {[
-                    { icon: BookOpen, label: "My Reflections", href: "/reflections" },
-                    { icon: TrendingUp, label: "Reading Plan", href: "/progress" },
-                    { icon: Award, label: "Achievements", href: "/profile" },
-                    { icon: Users, label: "Partnerships", href: "/partnerships" },
-                  ].map((item) => (
+                    {[
+                      { icon: BookOpen, label: "My Reflections", href: "/reflections" },
+                      { icon: TrendingUp, label: "Reading Plan", href: "/progress" },
+                      { icon: Award, label: "Achievements", href: "/profile" },
+                      { icon: Users, label: "Partnerships", href: "/partnerships" },
+                      { icon: Heart, label: "Prayer Wall", href: "/prayers" },
+                      { icon: Bookmark, label: "My Vault", href: "/bookmarks" },
+                    ].map((item) => (
                     <Link
                       key={item.label}
                       href={item.href}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -28,11 +28,17 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   BookOpen,
   Bookmark,
+  BookmarkCheck,
   Share2,
   Settings2,
   Sun,
@@ -41,6 +47,14 @@ import {
   Check,
   Sparkles,
   Loader2,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Highlighter,
+  StickyNote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Confetti from "react-confetti";
@@ -50,12 +64,26 @@ import { toast } from "sonner";
 import { getChapterId, getNavigation } from "@/lib/bible-utils";
 
 type Theme = "light" | "sepia" | "dark";
+type FontFamily = "serif" | "sans";
 
 const themeClasses: Record<Theme, string> = {
   light: "bg-white text-foreground",
   sepia: "bg-amber-50 text-amber-950",
   dark: "bg-slate-900 text-slate-100",
 };
+
+const fontClasses: Record<FontFamily, string> = {
+  serif: "font-serif",
+  sans: "font-sans",
+};
+
+const highlightColors = [
+  { value: "yellow", class: "bg-yellow-200", label: "Yellow" },
+  { value: "green", class: "bg-green-200", label: "Green" },
+  { value: "blue", class: "bg-blue-200", label: "Blue" },
+  { value: "pink", class: "bg-pink-200", label: "Pink" },
+  { value: "purple", class: "bg-purple-200", label: "Purple" },
+];
 
 export default function ReadingPage() {
   const params = useParams();
@@ -71,15 +99,44 @@ export default function ReadingPage() {
   const [userProgress, setUserProgress] = useState<{ chaptersRead: number; streak: number }>({ chaptersRead: 0, streak: 0 });
 
   const [fontSize, setFontSize] = useState([18]);
+  const [fontFamily, setFontFamily] = useState<FontFamily>("serif");
   const [theme, setTheme] = useState<Theme>("light");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
   const [reflection, setReflection] = useState("");
   const [isShared, setIsShared] = useState(false);
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioSpeed, setAudioSpeed] = useState(1);
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  
+  const [selectedText, setSelectedText] = useState("");
+  const [selectedVerse, setSelectedVerse] = useState<number | null>(null);
+  const [showBookmarkDialog, setShowBookmarkDialog] = useState(false);
+  const [bookmarkNote, setBookmarkNote] = useState("");
+  const [bookmarkColor, setBookmarkColor] = useState("yellow");
 
   const displayBook = book.charAt(0).toUpperCase() + book.slice(1);
   const navigation = useMemo(() => getNavigation(book, chapterNum), [book, chapterNum]);
+
+  useEffect(() => {
+    async function loadPreferences() {
+      if (!session) return;
+      try {
+        const res = await fetch("/api/preferences");
+        if (res.ok) {
+          const prefs = await res.json();
+          if (prefs.fontSize) setFontSize([prefs.fontSize]);
+          if (prefs.fontFamily) setFontFamily(prefs.fontFamily as FontFamily);
+          if (prefs.theme) setTheme(prefs.theme as Theme);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadPreferences();
+  }, [session]);
 
   useEffect(() => {
     async function fetchVersions() {
@@ -135,6 +192,105 @@ export default function ReadingPage() {
     }
     fetchProgress();
   }, [session]);
+
+  useEffect(() => {
+    return () => {
+      if (speechRef.current) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const savePreferences = async (newPrefs: Partial<{ fontSize: number; fontFamily: string; theme: string }>) => {
+    try {
+      await fetch("/api/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPrefs),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFontSizeChange = (value: number[]) => {
+    setFontSize(value);
+    savePreferences({ fontSize: value[0] });
+  };
+
+  const handleFontFamilyChange = (value: FontFamily) => {
+    setFontFamily(value);
+    savePreferences({ fontFamily: value });
+  };
+
+  const handleThemeChange = (value: Theme) => {
+    setTheme(value);
+    savePreferences({ theme: value });
+  };
+
+  const toggleAudio = () => {
+    if (isPlaying) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+    } else {
+      if (!content?.content) return;
+      
+      const textContent = content.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const utterance = new SpeechSynthesisUtterance(textContent);
+      utterance.rate = audioSpeed;
+      utterance.onend = () => setIsPlaying(false);
+      
+      speechRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+      setIsPlaying(true);
+    }
+  };
+
+  const handleSpeedChange = (speed: number) => {
+    setAudioSpeed(speed);
+    if (isPlaying && speechRef.current) {
+      window.speechSynthesis.cancel();
+      speechRef.current.rate = speed;
+      window.speechSynthesis.speak(speechRef.current);
+    }
+  };
+
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim()) {
+      setSelectedText(selection.toString().trim());
+    }
+  };
+
+  const handleBookmarkChapter = async () => {
+    if (!session) {
+      toast.error("Please sign in to save bookmarks");
+      return;
+    }
+    
+    try {
+      await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          book: displayBook,
+          chapter: chapterNum,
+          verseText: selectedText || null,
+          note: bookmarkNote || null,
+          color: bookmarkColor,
+        }),
+      });
+      
+      setIsBookmarked(true);
+      setShowBookmarkDialog(false);
+      setBookmarkNote("");
+      setSelectedText("");
+      toast.success("Saved to your vault!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save bookmark");
+    }
+  };
 
   const handleComplete = async () => {
     if (!session) {
@@ -227,7 +383,7 @@ export default function ReadingPage() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Select value={bibleId} onValueChange={handleVersionChange}>
                 <SelectTrigger className="w-20 h-8 text-xs">
                   <SelectValue>{currentVersion?.abbreviation || "KJV"}</SelectValue>
@@ -241,15 +397,68 @@ export default function ReadingPage() {
                 </SelectContent>
               </Select>
 
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    {isPlaying ? (
+                      <Volume2 className="h-4 w-4 text-primary" />
+                    ) : (
+                      <VolumeX className="h-4 w-4" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm">Audio Bible</h4>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+                        <SkipBack className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        onClick={toggleAudio}
+                        className="h-12 w-12 rounded-full bg-primary hover:bg-primary/90"
+                      >
+                        {isPlaying ? (
+                          <Pause className="h-5 w-5" />
+                        ) : (
+                          <Play className="h-5 w-5 ml-0.5" />
+                        )}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+                        <SkipForward className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs text-muted-foreground">Speed: {audioSpeed}x</label>
+                      <div className="flex gap-1">
+                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                          <Button
+                            key={speed}
+                            variant={audioSpeed === speed ? "default" : "outline"}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => handleSpeedChange(speed)}
+                          >
+                            {speed}x
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setIsBookmarked(!isBookmarked)}
+                onClick={() => setShowBookmarkDialog(true)}
               >
-                <Bookmark
-                  className={cn("h-4 w-4", isBookmarked && "fill-current text-secondary")}
-                />
+                {isBookmarked ? (
+                  <BookmarkCheck className="h-4 w-4 fill-current text-secondary" />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
               </Button>
 
               <Sheet>
@@ -270,7 +479,7 @@ export default function ReadingPage() {
                       </label>
                       <Slider
                         value={fontSize}
-                        onValueChange={setFontSize}
+                        onValueChange={handleFontSizeChange}
                         min={14}
                         max={28}
                         step={2}
@@ -278,6 +487,31 @@ export default function ReadingPage() {
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>A</span>
                         <span className="text-lg">A</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium">Font Style</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "serif" as FontFamily, label: "Serif", sample: "Aa" },
+                          { id: "sans" as FontFamily, label: "Sans", sample: "Aa" },
+                        ].map((f) => (
+                          <button
+                            key={f.id}
+                            onClick={() => handleFontFamilyChange(f.id)}
+                            className={cn(
+                              "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
+                              fontFamily === f.id
+                                ? "border-primary bg-primary/10"
+                                : "border-muted hover:border-primary/50",
+                              f.id === "serif" ? "font-serif" : "font-sans"
+                            )}
+                          >
+                            <span className="text-2xl">{f.sample}</span>
+                            <span className="text-xs">{f.label}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
@@ -291,7 +525,7 @@ export default function ReadingPage() {
                         ].map((t) => (
                           <button
                             key={t.id}
-                            onClick={() => setTheme(t.id)}
+                            onClick={() => handleThemeChange(t.id)}
                             className={cn(
                               "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                               theme === t.id
@@ -337,8 +571,9 @@ export default function ReadingPage() {
             </div>
 
             <div
-              className="scripture-text leading-relaxed space-y-4"
+              className={cn("scripture-text leading-relaxed space-y-4", fontClasses[fontFamily])}
               style={{ fontSize: `${fontSize[0]}px` }}
+              onMouseUp={handleTextSelection}
               dangerouslySetInnerHTML={{ __html: content?.content || "" }}
             />
 
@@ -409,6 +644,78 @@ export default function ReadingPage() {
           </div>
         </div>
       </footer>
+
+      <Dialog open={showBookmarkDialog} onOpenChange={setShowBookmarkDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bookmark className="h-5 w-5 text-violet-500" />
+              Save to Vault
+            </DialogTitle>
+            <DialogDescription>
+              Add {displayBook} {chapter} to your personal Scripture vault
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {selectedText && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm italic">&ldquo;{selectedText}&rdquo;</p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Highlighter className="h-4 w-4" />
+                Highlight Color
+              </label>
+              <div className="flex gap-2">
+                {highlightColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => setBookmarkColor(color.value)}
+                    className={cn(
+                      "h-8 w-8 rounded-full transition-all",
+                      color.class,
+                      bookmarkColor === color.value && "ring-2 ring-offset-2 ring-primary"
+                    )}
+                    title={color.label}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <StickyNote className="h-4 w-4" />
+                Add a Note (optional)
+              </label>
+              <Textarea
+                placeholder="What does this passage mean to you?"
+                value={bookmarkNote}
+                onChange={(e) => setBookmarkNote(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowBookmarkDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white"
+                onClick={handleBookmarkChapter}
+              >
+                <BookmarkCheck className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showCompletion && showReflection} onOpenChange={setShowReflection}>
         <DialogContent className="sm:max-w-lg">
