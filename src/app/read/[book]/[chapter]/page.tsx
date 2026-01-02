@@ -42,7 +42,6 @@ import {
   Sparkles,
   Loader2,
 } from "lucide-react";
-import { ShareModal } from "@/components/ShareModal";
 import { cn } from "@/lib/utils";
 import Confetti from "react-confetti";
 import { useParams } from "next/navigation";
@@ -78,7 +77,6 @@ export default function ReadingPage() {
   const [showReflection, setShowReflection] = useState(false);
   const [reflection, setReflection] = useState("");
   const [isShared, setIsShared] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
 
   const displayBook = book.charAt(0).toUpperCase() + book.slice(1);
   const navigation = useMemo(() => getNavigation(book, chapterNum), [book, chapterNum]);
@@ -361,10 +359,10 @@ export default function ReadingPage() {
                     <Sparkles className="mr-2 h-4 w-4" />
                     Mark as Read & Reflect
                   </Button>
-<Button variant="outline" onClick={() => setShowShareModal(true)}>
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Share Chapter
-                    </Button>
+                  <Button variant="outline">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share Chapter
+                  </Button>
                 </div>
               </motion.div>
             </div>
@@ -518,14 +516,7 @@ export default function ReadingPage() {
             </motion.div>
           </motion.div>
         )}
-</AnimatePresence>
-
-        <ShareModal
-          open={showShareModal}
-          onOpenChange={setShowShareModal}
-          title={`${displayBook} ${chapter}`}
-          text={content?.content?.replace(/<[^>]*>/g, '').substring(0, 300) + '...' || `Read ${displayBook} ${chapter} on Walk in the Word`}
-        />
-      </div>
-    );
-  }
+      </AnimatePresence>
+    </div>
+  );
+}

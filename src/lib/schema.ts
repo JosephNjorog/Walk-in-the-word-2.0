@@ -141,14 +141,3 @@ export const userPreferences = pgTable('user_preferences', {
   dailyReminderTime: text('daily_reminder_time').default('08:00'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
-
-// Social links for profile
-export const socialLinks = pgTable('social_links', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
-  platform: text('platform').notNull(),
-  url: text('url').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-}, (t) => ({
-  unq: unique().on(t.userId, t.platform),
-}));
