@@ -49,6 +49,10 @@ export default function PartnershipsPage() {
   const [sendingInvite, setSendingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [encourageDialogOpen, setEncourageDialogOpen] = useState(false);
+  const [encourageMessage, setEncourageMessage] = useState("");
+  const [selectedPartner, setSelectedPartner] = useState<any>(null);
+  const [sendingEncouragement, setSendingEncouragement] = useState(false);
 
   useEffect(() => {
     fetchPartners();
@@ -113,6 +117,36 @@ export default function PartnershipsPage() {
     }
   };
 
+  const handleEncourage = async () => {
+    if (!encourageMessage.trim() || !selectedPartner) return;
+
+    setSendingEncouragement(true);
+    try {
+      const res = await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: selectedPartner.partner.email || selectedPartner.partner.id,
+          subject: "You've received encouragement from your reading partner!",
+          message: encourageMessage,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Encouragement sent!");
+        setEncourageMessage("");
+        setEncourageDialogOpen(false);
+        setSelectedPartner(null);
+      } else {
+        toast.error("Failed to send encouragement");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setSendingEncouragement(false);
+    }
+  };
+
   const activePartners = partners.filter(p => p.status === 'active');
   const pendingRequests = partners.filter(p => p.status === 'pending');
 
@@ -169,6 +203,50 @@ export default function PartnershipsPage() {
                 </form>
               </DialogContent>
             </Dialog>
+
+            <Dialog open={encourageDialogOpen} onOpenChange={setEncourageDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Send Encouragement</DialogTitle>
+                  <DialogDescription>
+                    Send a word of encouragement to {selectedPartner?.partner.name}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Keep up the great work! Your dedication is inspiring..."
+                    value={encourageMessage}
+                    onChange={(e) => setEncourageMessage(e.target.value)}
+                    rows={5}
+                    className="resize-none"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setEncourageDialogOpen(false);
+                        setEncourageMessage("");
+                        setSelectedPartner(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleEncourage}
+                      disabled={!encourageMessage.trim() || sendingEncouragement}
+                      className="btn-primary"
+                    >
+                      {sendingEncouragement ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
@@ -216,7 +294,15 @@ export default function PartnershipsPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" className="hidden sm:flex">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="hidden sm:flex"
+                          onClick={() => {
+                            setSelectedPartner(p);
+                            setEncourageDialogOpen(true);
+                          }}
+                        >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Encourage
                         </Button>
@@ -227,8 +313,15 @@ export default function PartnershipsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/profile/${p.partner.id}`}>View Profile</Link>
+                            <DropdownMenuItem 
+                              className="sm:hidden"
+                              onClick={() => {
+                                setSelectedPartner(p);
+                                setEncourageDialogOpen(true);
+                              }}
+                            >
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              Send Encouragement
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleRequest(p.id, 'reject')}>
                               Remove Partner
