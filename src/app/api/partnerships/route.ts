@@ -25,6 +25,7 @@ export async function GET() {
         createdAt: partnerships.createdAt,
         partner: {
           id: user.id,
+          email: user.email,
           name: user.name,
           username: user.username,
           image: user.image,

@@ -53,26 +53,26 @@ export async function POST(request: NextRequest) {
 
     switch (type) {
       case "welcome":
-        subject = "Welcome to Walk in the Word!";
+        emailSubject = "Welcome to Walk in the Word!";
         html = getWelcomeEmailHtml(data?.name || "Friend");
         break;
       case "password-reset":
-        subject = "Reset Your Password - Walk in the Word";
+        emailSubject = "Reset Your Password - Walk in the Word";
         html = getPasswordResetEmailHtml(data?.name || "Friend", data?.resetLink);
         break;
       case "daily-reminder":
-        subject = "Your Daily Scripture Awaits";
+        emailSubject = "Your Daily Scripture Awaits";
         html = getDailyReminderEmailHtml(data?.name || "Friend", data?.todayReading || "Continue Reading");
         break;
       case "partner-invite":
-        subject = `${data?.inviterName} invites you to Walk in the Word`;
+        emailSubject = `${data?.inviterName} invites you to Walk in the Word`;
         html = getPartnerInviteEmailHtml(data?.inviterName || "A friend", data?.inviteLink);
         break;
       default:
         return NextResponse.json({ error: "Invalid email type" }, { status: 400 });
     }
 
-    await sendEmail({ to, subject, html });
+    await sendEmail({ to, subject: emailSubject, html });
 
     return NextResponse.json({ success: true });
   } catch (error) {
