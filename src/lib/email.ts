@@ -247,3 +247,61 @@ export function getPartnerInviteEmailHtml(inviterName: string, inviteLink: strin
 </html>
   `;
 }
+
+export function getEncouragementEmailHtml(senderName: string, message: string) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px; border-radius: 16px 16px 0 0; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">💌 Encouragement</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <p style="color: #1e3a5f; font-style: italic; margin: 0; font-size: 16px; line-height: 1.6;">
+                  "Therefore encourage one another and build each other up, just as in fact you are doing."
+                </p>
+                <p style="color: #6b7280; margin: 10px 0 0; font-size: 14px;">— 1 Thessalonians 5:11</p>
+              </div>
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                Your reading partner <strong style="color: #1e3a5f;">${senderName}</strong> sent you this message:
+              </p>
+              <div style="background-color: #f9fafb; padding: 25px; border-radius: 12px; margin: 20px 0;">
+                <p style="color: #1e3a5f; font-size: 16px; line-height: 1.8; margin: 0; white-space: pre-wrap;">${message}</p>
+              </div>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL}/partnerships" style="display: inline-block; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  View Partnerships
+                </a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f9fafb; padding: 30px 40px; border-radius: 0 0 16px 16px; text-align: center;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 0; line-height: 1.6;">
+                Keep encouraging one another in the Word
+              </p>
+              <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0;">
+                © ${new Date().getFullYear()} Walk in the Word
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
