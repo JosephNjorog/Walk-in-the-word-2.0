@@ -48,6 +48,7 @@ export default function PartnershipsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [sendingInvite, setSendingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchPartners();
@@ -82,6 +83,7 @@ export default function PartnershipsPage() {
       if (res.ok) {
         toast.success("Invitation sent successfully!");
         setInviteEmail("");
+        setInviteDialogOpen(false);
         fetchPartners();
       } else {
         const error = await res.json();
@@ -136,9 +138,9 @@ export default function PartnershipsPage() {
             <h1 className="text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
               Partnerships
             </h1>
-            <Dialog>
+            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="btn-primary">
+                <Button size="sm" className="btn-primary" id="invite-trigger">
                   <UserPlus className="h-4 w-4 mr-1" />
                   Invite
                 </Button>
@@ -246,7 +248,7 @@ export default function PartnershipsPage() {
                     <p className="text-sm text-muted-foreground mb-6">
                       Reading the Bible is better together. Invite someone to join your journey.
                     </p>
-                    <Button onClick={() => document.getElementById('invite-trigger')?.click()} className="btn-primary">
+                    <Button onClick={() => setInviteDialogOpen(true)} className="btn-primary">
                       <UserPlus className="h-4 w-4 mr-1" />
                       Invite Your First Partner
                     </Button>

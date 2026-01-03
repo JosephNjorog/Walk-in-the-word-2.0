@@ -1,19 +1,22 @@
 import nodemailer from "nodemailer";
 
 const isEmailConfigured = () => {
-  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  return !!(process.env.SMTP_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
 };
 
 const getTransporter = () => {
-  if (!isEmailConfigured()) return null;
+  if (!isEmailConfigured()) {
+    console.warn("[Mail] Email not configured - missing SMTP_HOST, EMAIL_USER, or EMAIL_PASSWORD");
+    return null;
+  }
   
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || "587"),
     secure: process.env.SMTP_PORT === "465",
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
     },
   });
 };
@@ -36,12 +39,14 @@ export async function sendEmail({
   }
 
   const info = await transporter.sendMail({
-    from: `"${process.env.SMTP_FROM_NAME || "Walk in the Word"}" <${process.env.SMTP_FROM_EMAIL}>`,
+    from: `"${process.env.EMAIL_FROM_NAME || "Walk in the Word"}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
     to,
     subject,
     html,
   });
 
+  console.log("[Mail] Email sent successfully to:", to);
+  console.log("[Mail] Subject:", subject);
   return info;
 }
 

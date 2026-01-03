@@ -29,7 +29,10 @@ export async function POST(request: Request) {
 
     if (!targetUser) {
         // If user doesn't exist, we can still send an invite to join the platform
-        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://' + (headers().get('host') || 'walkintheword.app')}/register?ref=${session.user.id}`;
+        const host = (await headers()).get('host') || 'localhost:3000';
+        const protocol = host.includes('localhost') ? 'http' : 'https';
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
+        const inviteLink = `${baseUrl}/register?ref=${session.user.id}`;
         
         await sendEmail({
             to: email,
@@ -64,7 +67,10 @@ export async function POST(request: Request) {
     });
 
     // Send notification email
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://' + (headers().get('host') || 'walkintheword.app')}/partnerships`;
+    const host = (await headers()).get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
+    const inviteLink = `${baseUrl}/partnerships`;
     await sendEmail({
       to: email,
       subject: `${session.user.name} invited you to be a reading partner`,
