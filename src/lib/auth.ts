@@ -10,6 +10,8 @@ export const auth = betterAuth({
             ...schema,
         }
     }),
+    baseURL: process.env.BETTER_AUTH_URL,
+    trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',') || [],
     emailAndPassword: {
         enabled: true,
     },
