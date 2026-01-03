@@ -1,10 +1,8 @@
+'use client';
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookOpen, WifiOff, RefreshCw } from "lucide-react";
-
-export const metadata = {
-  title: "Offline | Walk in the Word",
-};
 
 export default function OfflinePage() {
   return (
