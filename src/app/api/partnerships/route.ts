@@ -17,26 +17,7 @@ export async function GET() {
   try {
     const userId = session.user.id;
     
-    // Fetch all partnerships for the user
-    const results = await db.query.partnerships.findMany({
-      where: or(
-        eq(partnerships.userId1, userId),
-        eq(partnerships.userId2, userId)
-      ),
-      with: {
-        //@ts-ignore - drizzle schema relations might need to be checked
-        user1: true,
-        //@ts-ignore
-        user2: true,
-      }
-    });
-
-    // In case relations are not set up in db.ts, we'll do it manually if needed.
-    // Let's check if relations are set up.
-    
-    // For now, let's assume we need to join manually if query.partnerships.findMany fails with 'with'
-    // Actually, I'll just do manual joins to be safe.
-    
+    // Fetch all partnerships with manual joins
     const partnersData = await db
       .select({
         id: partnerships.id,

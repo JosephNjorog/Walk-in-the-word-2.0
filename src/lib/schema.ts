@@ -141,3 +141,101 @@ export const userPreferences = pgTable('user_preferences', {
   dailyReminderTime: text('daily_reminder_time').default('08:00'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
+
+// Relations
+import { relations } from 'drizzle-orm';
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  readingProgress: many(readingProgress),
+  reflections: many(reflections),
+  partnerships1: many(partnerships, { relationName: 'user1' }),
+  partnerships2: many(partnerships, { relationName: 'user2' }),
+  achievements: many(achievements),
+  prayerRequests: many(prayerRequests),
+  prayerInteractions: many(prayerInteractions),
+  bookmarks: many(bookmarks),
+  preferences: many(userPreferences),
+}));
+
+export const partnershipsRelations = relations(partnerships, ({ one }) => ({
+  user1: one(user, {
+    fields: [partnerships.userId1],
+    references: [user.id],
+    relationName: 'user1',
+  }),
+  user2: one(user, {
+    fields: [partnerships.userId2],
+    references: [user.id],
+    relationName: 'user2',
+  }),
+}));
+
+export const readingProgressRelations = relations(readingProgress, ({ one }) => ({
+  user: one(user, {
+    fields: [readingProgress.userId],
+    references: [user.id],
+  }),
+}));
+
+export const reflectionsRelations = relations(reflections, ({ one }) => ({
+  user: one(user, {
+    fields: [reflections.userId],
+    references: [user.id],
+  }),
+}));
+
+export const achievementsRelations = relations(achievements, ({ one }) => ({
+  user: one(user, {
+    fields: [achievements.userId],
+    references: [user.id],
+  }),
+}));
+
+export const prayerRequestsRelations = relations(prayerRequests, ({ one, many }) => ({
+  user: one(user, {
+    fields: [prayerRequests.userId],
+    references: [user.id],
+  }),
+  interactions: many(prayerInteractions),
+}));
+
+export const prayerInteractionsRelations = relations(prayerInteractions, ({ one }) => ({
+  prayerRequest: one(prayerRequests, {
+    fields: [prayerInteractions.prayerRequestId],
+    references: [prayerRequests.id],
+  }),
+  user: one(user, {
+    fields: [prayerInteractions.userId],
+    references: [user.id],
+  }),
+}));
+
+export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
+  user: one(user, {
+    fields: [bookmarks.userId],
+    references: [user.id],
+  }),
+}));
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(user, {
+    fields: [userPreferences.userId],
+    references: [user.id],
+  }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
