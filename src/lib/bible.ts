@@ -25,7 +25,8 @@ const FALLBACK_VERSIONS: BibleVersion[] = [
 
 export async function getBibleVersions(): Promise<BibleVersion[]> {
   const apiKey = process.env.BIBLE_API_KEY;
-  if (!apiKey || apiKey.length < 10) {
+  if (!apiKey || apiKey.trim().length < 5) {
+    console.warn("Bible API key not configured or too short, using fallback versions");
     return FALLBACK_VERSIONS;
   }
 
@@ -35,7 +36,7 @@ export async function getBibleVersions(): Promise<BibleVersion[]> {
     });
 
     if (!response.ok) {
-      console.error("Bible API returned error:", response.status);
+      console.error("Bible API returned error:", response.status, await response.text());
       return FALLBACK_VERSIONS;
     }
     
@@ -54,7 +55,8 @@ export async function getBibleVersions(): Promise<BibleVersion[]> {
 export async function getChapterContent(bibleId: string, chapterId: string): Promise<BibleChapter> {
   const apiKey = process.env.BIBLE_API_KEY;
   
-  if (!apiKey || apiKey.length < 10) {
+  if (!apiKey || apiKey.trim().length < 5) {
+    console.warn("Bible API key not configured, using fallback content");
     return getFallbackChapter(bibleId, chapterId);
   }
 
@@ -67,7 +69,8 @@ export async function getChapterContent(bibleId: string, chapterId: string): Pro
     );
 
     if (!response.ok) {
-      console.error("Bible chapter API returned error:", response.status);
+      const errorText = await response.text();
+      console.error("Bible chapter API returned error:", response.status, errorText);
       return getFallbackChapter(bibleId, chapterId);
     }
     
