@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -18,7 +18,26 @@ export async function GET(
   }
 
   try {
-    const partnerId = params.id;
+    const { id: partnerIdOrUsername } = await params;
+    
+    // Check if it's a username (starts with @) or ID
+    const isUsername = partnerIdOrUsername.startsWith('@');
+    const searchValue = isUsername ? partnerIdOrUsername.substring(1) : partnerIdOrUsername;
+    
+    // Find partner by username or ID
+    const partnerInfo = isUsername
+      ? await db.query.user.findFirst({
+          where: eq(user.username, searchValue),
+        })
+      : await db.query.user.findFirst({
+          where: eq(user.id, searchValue),
+        });
+
+    if (!partnerInfo) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const partnerId = partnerInfo.id;
     
     // Check if they are partners
     const partnership = await db.query.partnerships.findFirst({
