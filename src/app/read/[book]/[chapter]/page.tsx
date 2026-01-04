@@ -66,7 +66,7 @@ export default function ReadingPage() {
   const chapterNum = parseInt(chapter);
   
   const { data: session } = authClient.useSession();
-  const [bibleId, setBibleId] = useState("de4e12af7f28f599-01");
+  const [bibleId, setBibleId] = useState("9879dbb7cfe39e4d-01"); // WEB - World English Bible
   const [versions, setVersions] = useState<{ id: string; abbreviation: string; name: string }[]>([]);
   const [versionSearch, setVersionSearch] = useState("");
   const [content, setContent] = useState<{ content: string; reference: string } | null>(null);
@@ -241,7 +241,7 @@ export default function ReadingPage() {
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 text-xs gap-2">
                     <BookOpen className="h-3 w-3" />
-                    {currentVersion?.abbreviation || "KJV"}
+                    {currentVersion?.abbreviation || "WEB"}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[80vh]">

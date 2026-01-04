@@ -37,7 +37,7 @@ export const auth = betterAuth({
             },
             preferredVersion: {
                 type: "string",
-                defaultValue: "KJV",
+                defaultValue: "WEB",
             },
             currentStreak: {
                 type: "number",
