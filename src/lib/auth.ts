@@ -86,25 +86,18 @@ export const auth = betterAuth({
             },
         }
     },
-    hooks: {
-        after: [
-            {
-                matcher: (context) => context.path === "/sign-in/social" || context.path === "/sign-up/social",
-                handler: async (ctx) => {
-                    // Auto-generate username for OAuth users
-                    if (ctx.user && !ctx.user.username) {
-                        const generatedUsername = generateUsername(
-                            ctx.user.name || "",
-                            ctx.user.email || ""
-                        );
-                        const uniqueUsername = await ensureUniqueUsername(generatedUsername);
-                        
-                        await db.update(schema.user)
-                            .set({ username: uniqueUsername })
-                            .where(eq(schema.user.id, ctx.user.id));
-                    }
-                },
-            },
-        ],
+    onAfterSignUp: async (user) => {
+        // Auto-generate username for users without one (OAuth)
+        if (!user.username) {
+            const generatedUsername = generateUsername(
+                user.name || "",
+                user.email || ""
+            );
+            const uniqueUsername = await ensureUniqueUsername(generatedUsername);
+            
+            await db.update(schema.user)
+                .set({ username: uniqueUsername })
+                .where(eq(schema.user.id, user.id));
+        }
     },
 });
