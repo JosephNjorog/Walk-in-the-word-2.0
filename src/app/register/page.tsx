@@ -61,14 +61,33 @@ export default function RegisterPage() {
       setStep(step + 1);
       return;
     }
+
+    // Validate username is available
+    if (usernameAvailable === false) {
+      toast.error("Please choose an available username");
+      return;
+    }
+
     setIsLoading(true);
     
     try {
+      // Generate username if not provided
+      let finalUsername = formData.username;
+      if (!finalUsername) {
+        const nameRes = await fetch("/api/username/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: `${formData.firstName} ${formData.lastName}`.trim() }),
+        });
+        const nameData = await nameRes.json();
+        finalUsername = nameData.username;
+      }
+
       const { error } = await authClient.signUp.email({
         email: formData.email,
         password: formData.password,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        username: formData.email.split("@")[0],
+        username: finalUsername,
         //@ts-ignore - custom fields
         readingPace: parseInt(formData.readingPace),
         callbackURL: "/dashboard",
