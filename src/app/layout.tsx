@@ -68,12 +68,6 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body className="min-h-screen">
-        <Script
-          id="orchids-browser-logs"
-          src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts/orchids-browser-logs.js"
-          strategy="afterInteractive"
-          data-orchids-project-id="3a894f89-aae2-423c-88d1-bd3f6d1416e7"
-        />
         {children}
         <Toaster position="top-right" richColors />
         <PWAInstallPrompt />

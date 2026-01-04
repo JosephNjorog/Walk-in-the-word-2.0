@@ -459,9 +459,11 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Walk in the Word. Made with love for Jesus.
-            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-muted-foreground">
+              <p>&copy; {new Date().getFullYear()} Walk in the Word. Made with love for Jesus.</p>
+              <span className="hidden sm:inline">•</span>
+              <p>A product of <span className="font-semibold text-primary">SynchStack Solutions Labs</span></p>
+            </div>
             <p className="text-xs text-muted-foreground scripture-text italic">
               &ldquo;Let the word of Christ dwell in you richly.&rdquo; - Colossians 3:16
             </p>
