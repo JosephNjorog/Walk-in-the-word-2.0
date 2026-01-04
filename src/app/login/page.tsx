@@ -43,18 +43,28 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    try {
-      await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard",
-      });
-    } catch (err) {
+    // Immediately trigger OAuth popup - no async/await delay
+    authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+    }).catch((err) => {
       console.error(err);
       toast.error("Failed to sign in with Google");
       setIsGoogleLoading(false);
-    }
+    });
+  };
+
+  const handleGithubSignIn = () => {
+    // Immediately trigger OAuth popup - no async/await delay
+    authClient.signIn.social({
+      provider: "github",
+      callbackURL: "/dashboard",
+    }).catch((err) => {
+      console.error(err);
+      toast.error("Failed to sign in with GitHub");
+    });
   };
 
   return (
