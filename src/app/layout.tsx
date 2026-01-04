@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import Script from "next/script";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { SplashScreen } from "@/components/splash-screen";
 
 export const metadata: Metadata = {
   title: "Walk in the Word | Daily Bible Reading & Accountability",
@@ -68,6 +69,7 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body className="min-h-screen">
+        <SplashScreen />
         {children}
         <Toaster position="top-right" richColors />
         <PWAInstallPrompt />
