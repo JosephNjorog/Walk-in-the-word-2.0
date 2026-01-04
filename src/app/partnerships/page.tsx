@@ -325,7 +325,7 @@ export default function PartnershipsPage() {
                               Send Encouragement
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/profile/${p.partner.id}`}>View Profile</Link>
+                              <Link href={`/profile/@${p.partner.username || p.partner.id}`}>View Profile</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleRequest(p.id, 'reject')}>
                               Remove Partner

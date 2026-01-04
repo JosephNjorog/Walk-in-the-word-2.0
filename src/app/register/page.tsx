@@ -384,6 +384,43 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <div className="relative">
+                        <Input
+                          id="username"
+                          placeholder="Choose a unique username"
+                          value={formData.username}
+                          onChange={(e) => {
+                            const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                            setFormData({ ...formData, username: value });
+                            if (value.length >= 3) {
+                              checkUsernameAvailability(value);
+                            } else {
+                              setUsernameAvailable(null);
+                            }
+                          }}
+                          required
+                          className="h-12 pr-10"
+                        />
+                        {checkingUsername && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+                        )}
+                        {!checkingUsername && usernameAvailable === true && (
+                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        3-20 characters, lowercase letters, numbers, and underscores only
+                      </p>
+                      {usernameAvailable === false && (
+                        <p className="text-xs text-destructive">Username is already taken</p>
+                      )}
+                      {usernameAvailable === true && (
+                        <p className="text-xs text-green-600">Username is available!</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="readingPace">Daily Reading Goal</Label>
                       <Select
                         value={formData.readingPace}
