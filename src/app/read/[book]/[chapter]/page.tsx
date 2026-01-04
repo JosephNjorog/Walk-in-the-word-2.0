@@ -41,6 +41,7 @@ import {
   Check,
   Sparkles,
   Loader2,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Confetti from "react-confetti";
@@ -66,6 +67,7 @@ export default function ReadingPage() {
   const { data: session } = authClient.useSession();
   const [bibleId, setBibleId] = useState("de4e12af7f28f599-01");
   const [versions, setVersions] = useState<{ id: string; abbreviation: string; name: string }[]>([]);
+  const [versionSearch, setVersionSearch] = useState("");
   const [content, setContent] = useState<{ content: string; reference: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userProgress, setUserProgress] = useState<{ chaptersRead: number; streak: number }>({ chaptersRead: 0, streak: 0 });
@@ -193,7 +195,13 @@ export default function ReadingPage() {
 
   const handleVersionChange = (newBibleId: string) => {
     setBibleId(newBibleId);
+    setVersionSearch("");
   };
+
+  const filteredVersions = versions.filter((v) => 
+    v.name.toLowerCase().includes(versionSearch.toLowerCase()) ||
+    v.abbreviation.toLowerCase().includes(versionSearch.toLowerCase())
+  );
 
   const currentVersion = versions.find(v => v.id === bibleId);
 
@@ -228,18 +236,51 @@ export default function ReadingPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Select value={bibleId} onValueChange={handleVersionChange}>
-                <SelectTrigger className="w-20 h-8 text-xs">
-                  <SelectValue>{currentVersion?.abbreviation || "KJV"}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {versions.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.abbreviation}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-2">
+                    <BookOpen className="h-3 w-3" />
+                    {currentVersion?.abbreviation || "KJV"}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[80vh]">
+                  <SheetHeader>
+                    <SheetTitle>Select Bible Version</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search translations..."
+                        value={versionSearch}
+                        onChange={(e) => setVersionSearch(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <div className="space-y-2 max-h-[calc(80vh-180px)] overflow-y-auto">
+                      {filteredVersions.length > 0 ? (
+                        filteredVersions.map((v) => (
+                          <Button
+                            key={v.id}
+                            variant={bibleId === v.id ? "default" : "ghost"}
+                            className="w-full justify-start text-left"
+                            onClick={() => handleVersionChange(v.id)}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span className="font-semibold">{v.abbreviation}</span>
+                              <span className="text-xs text-muted-foreground">{v.name}</span>
+                            </div>
+                          </Button>
+                        ))
+                      ) : (
+                        <p className="text-center text-muted-foreground py-8">
+                          No versions found
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
 
               <Button
                 variant="ghost"

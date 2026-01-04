@@ -38,23 +38,40 @@ export async function POST(request: Request) {
         });
 
         // Update streak logic
-        const lastRead = session.user.lastReadAt ? new Date(session.user.lastReadAt) : null;
+        const userData = await db.query.user.findFirst({
+            where: eq(user.id, session.user.id),
+        });
+        
+        const lastRead = userData?.lastReadAt ? new Date(userData.lastReadAt) : null;
         const now = new Date();
-        const yesterday = new Date();
+        now.setHours(0, 0, 0, 0); // Reset to start of day
+        
+        const yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
+        
+        let lastReadDate = null;
+        if (lastRead) {
+            lastReadDate = new Date(lastRead);
+            lastReadDate.setHours(0, 0, 0, 0);
+        }
 
-        let newStreak = session.user.currentStreak || 0;
-        if (!lastRead || lastRead.toDateString() === yesterday.toDateString()) {
+        let newStreak = userData?.currentStreak || 0;
+        
+        // If last read was yesterday, increment streak
+        if (lastReadDate && lastReadDate.getTime() === yesterday.getTime()) {
             newStreak += 1;
-        } else if (lastRead.toDateString() !== now.toDateString()) {
+        }
+        // If last read was not today and not yesterday, reset to 1
+        else if (!lastReadDate || lastReadDate.getTime() !== now.getTime()) {
             newStreak = 1;
         }
+        // If last read was today, keep the same streak (don't increment again)
 
         await db.update(user).set({
             currentStreak: newStreak,
-            longestStreak: Math.max(newStreak, session.user.longestStreak || 0),
+            longestStreak: Math.max(newStreak, userData?.longestStreak || 0),
             //@ts-ignore
-            lastReadAt: now,
+            lastReadAt: new Date(),
         }).where(eq(user.id, session.user.id));
     }
 
