@@ -22,7 +22,14 @@ export function SplashScreen() {
       return;
     }
 
-    // Wait for auth check
+    // Wait for auth check with timeout
+    const timeoutId = setTimeout(() => {
+      // Force hide after 3 seconds regardless
+      setShow(false);
+      setChecking(false);
+      sessionStorage.setItem("splashShown", "true");
+    }, 3000);
+
     if (!isPending) {
       setChecking(false);
       
@@ -32,6 +39,7 @@ export function SplashScreen() {
       // If user is logged in, redirect to dashboard after animation
       if (session?.user) {
         setTimeout(() => {
+          setShow(false);
           router.push("/dashboard");
         }, 2500);
       } else {
@@ -40,10 +48,15 @@ export function SplashScreen() {
           setShow(false);
         }, 2500);
       }
+      
+      // Clear the timeout since we handled it
+      clearTimeout(timeoutId);
     }
+
+    return () => clearTimeout(timeoutId);
   }, [session, isPending, router]);
 
-  if (!show || !checking && !session) return null;
+  if (!show) return null;
 
   return (
     <AnimatePresence>
