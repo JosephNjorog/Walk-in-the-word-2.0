@@ -51,15 +51,6 @@ export async function GET(
       return NextResponse.json({ error: "Not partners with this user" }, { status: 403 });
     }
 
-    // Fetch partner info
-    const partnerInfo = await db.query.user.findFirst({
-      where: eq(user.id, partnerId),
-    });
-
-    if (!partnerInfo) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
     // Fetch partner's reading progress
     const progress = await db.query.readingProgress.findMany({
       where: eq(readingProgress.userId, partnerId),
