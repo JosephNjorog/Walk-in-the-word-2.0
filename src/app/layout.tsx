@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./toast-styles.css";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
