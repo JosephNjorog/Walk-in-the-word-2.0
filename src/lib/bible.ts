@@ -2,9 +2,6 @@ import { db } from './db';
 import { bibleVersions, bibleBooks, bibleVerses, crossReferences, commentaries, commentaryEntries } from './schema';
 import { eq, and, sql } from 'drizzle-orm';
 
-const BIBLE_API_URL = "https://rest.api.bible/v1";
-const USE_LOCAL_DATABASE = process.env.USE_LOCAL_BIBLE === 'true'; // Toggle between local DB and API
-
 export interface BibleVersion {
   id: string;
   name: string;
@@ -38,58 +35,28 @@ export interface CrossReference {
 }
 
 const FALLBACK_VERSIONS: BibleVersion[] = [
-  { id: "de4e12af7f28f599-01", name: "King James Version", abbreviation: "KJV" },
-  { id: "06125adcc2d5898a-01", name: "American Standard Version", abbreviation: "ASV" },
-  { id: "9879dbb7cfe39e4d-01", name: "World English Bible", abbreviation: "WEB" },
+  { id: "KJV", name: "King James Version", abbreviation: "KJV" },
+  { id: "BBE", name: "Bible in Basic English", abbreviation: "BBE" },
+  { id: "RVR", name: "Reina-Valera", abbreviation: "RVR" },
 ];
 
 /**
- * Get all available Bible versions
- * Prioritizes local database, falls back to API, then to hardcoded fallback
+ * Get all available Bible versions from local database
  */
 export async function getBibleVersions(): Promise<BibleVersion[]> {
-  // Try local database first
-  if (USE_LOCAL_DATABASE) {
-    try {
-      const localVersions = await db.select().from(bibleVersions);
-      if (localVersions && localVersions.length > 0) {
-        return localVersions.map(v => ({
-          id: v.abbreviation,
-          name: v.name,
-          abbreviation: v.abbreviation,
-        }));
-      }
-    } catch (error) {
-      console.error("Local Bible database error:", error);
-    }
-  }
-
-  // Fall back to API
-  const apiKey = process.env.BIBLE_API_KEY;
-  if (!apiKey || apiKey.trim().length < 5) {
-    console.warn("Bible API key not configured, using fallback versions");
-    return FALLBACK_VERSIONS;
-  }
-
   try {
-    const response = await fetch(`${BIBLE_API_URL}/bibles`, {
-      headers: { "api-key": apiKey },
-      next: { revalidate: 86400 }, // Cache for 24 hours
-    });
-
-    if (!response.ok) {
-      console.error("Bible API returned error:", response.status, await response.text());
-      return FALLBACK_VERSIONS;
+    const localVersions = await db.select().from(bibleVersions);
+    if (localVersions && localVersions.length > 0) {
+      return localVersions.map(v => ({
+        id: v.abbreviation,
+        name: v.name,
+        abbreviation: v.abbreviation,
+      }));
     }
-    
-    const data = await response.json();
-    return data.data.map((b: any) => ({
-      id: b.id,
-      name: b.name,
-      abbreviation: b.abbreviation,
-    }));
+    // Return fallback if database is empty
+    return FALLBACK_VERSIONS;
   } catch (error) {
-    console.error("Bible API error:", error);
+    console.error("Local Bible database error:", error);
     return FALLBACK_VERSIONS;
   }
 }
@@ -158,49 +125,19 @@ async function getLocalChapterContent(version: string, bookName: string, chapter
 }
 
 /**
- * Get chapter content - local database or API fallback
+ * Get chapter content from local database
  */
 export async function getChapterContent(bibleId: string, chapterId: string): Promise<BibleChapter> {
   const [bookId, chapterNum] = chapterId.split(".");
   const bookName = getBookName(bookId);
   
-  // Try local database first
-  if (USE_LOCAL_DATABASE) {
-    const localContent = await getLocalChapterContent(bibleId, bookName, parseInt(chapterNum));
-    if (localContent) {
-      return localContent;
-    }
+  const localContent = await getLocalChapterContent(bibleId, bookName, parseInt(chapterNum));
+  if (localContent) {
+    return localContent;
   }
 
-  // Fall back to API
-  const apiKey = process.env.BIBLE_API_KEY;
-  
-  if (!apiKey || apiKey.trim().length < 5) {
-    console.warn("Bible API key not configured, using fallback content");
-    return getFallbackChapter(bibleId, chapterId);
-  }
-
-  try {
-    const response = await fetch(
-      `${BIBLE_API_URL}/bibles/${bibleId}/chapters/${chapterId}?content-type=html&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false`,
-      {
-        headers: { "api-key": apiKey },
-        next: { revalidate: 3600 }, // Cache for 1 hour
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Bible chapter API returned error:", response.status, errorText);
-      return getFallbackChapter(bibleId, chapterId);
-    }
-    
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Bible chapter API error:", error);
-    return getFallbackChapter(bibleId, chapterId);
-  }
+  // Return fallback if not found
+  return getFallbackChapter(bibleId, chapterId);
 }
 
 /**
