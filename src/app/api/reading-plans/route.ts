@@ -42,9 +42,10 @@ export async function POST(request: NextRequest) {
       .insert(userReadingPlans)
       .values({
         userId: session.user.id,
-        planId,
+        templateId: parseInt(planId),
         startDate: new Date(),
         currentDay: 1,
+        isActive: true,
       })
       .returning();
 
