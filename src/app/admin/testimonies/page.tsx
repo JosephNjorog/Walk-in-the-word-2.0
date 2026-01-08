@@ -17,8 +17,8 @@ export default async function TestimoniesManagementPage() {
       title: testimonies.title,
       content: testimonies.content,
       category: testimonies.category,
-      isApproved: testimonies.isApproved,
       isFeatured: testimonies.isFeatured,
+      isPublic: testimonies.isPublic,
       createdAt: testimonies.createdAt,
       userId: testimonies.userId,
       userName: user.name,
@@ -28,9 +28,9 @@ export default async function TestimoniesManagementPage() {
     .leftJoin(user, eq(testimonies.userId, user.id))
     .orderBy(desc(testimonies.createdAt));
 
-  // Get stats
-  const pending = allTestimonies.filter(t => !t.isApproved);
-  const approved = allTestimonies.filter(t => t.isApproved);
+  // Get stats - using isPublic as proxy for approval
+  const pending = allTestimonies.filter(t => !t.isPublic);
+  const approved = allTestimonies.filter(t => t.isPublic);
   const featured = allTestimonies.filter(t => t.isFeatured);
 
   return (

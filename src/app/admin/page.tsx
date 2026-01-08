@@ -40,10 +40,9 @@ async function getDashboardStats() {
   const forumCount = await db.select({ count: sql<number>`count(*)` })
     .from(forumTopics);
 
-  // Active reading plans
+  // Active reading plans (all plans for now)
   const activePlans = await db.select({ count: sql<number>`count(*)` })
-    .from(userReadingPlans)
-    .where(sql`${userReadingPlans.completedAt} IS NULL`);
+    .from(userReadingPlans);
 
   return {
     totalUsers: totalUsers[0]?.count || 0,
