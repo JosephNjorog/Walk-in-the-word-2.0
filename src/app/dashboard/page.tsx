@@ -34,7 +34,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 import { BIBLE_BOOKS } from "@/lib/bible-utils";
 
 const dailyVerse = {
