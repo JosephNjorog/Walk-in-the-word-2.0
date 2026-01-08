@@ -119,6 +119,12 @@ export default function MemoryVersesPage() {
       return;
     }
 
+    // Check verse limit for free users
+    if (!premium && !lifetime && verses.length >= 10) {
+      toast.error("Free tier limited to 10 active verses. Upgrade to Premium for unlimited!");
+      return;
+    }
+
     try {
       const response = await fetch("/api/memory-verses", {
         method: "POST",
