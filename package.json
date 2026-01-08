@@ -11,7 +11,8 @@
         "db:migrate": "drizzle-kit migrate",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
-        "import-bible": "tsx scripts/import-bible-data.ts"
+        "import-bible": "tsx scripts/import-bible-data.ts",
+        "setup:admin": "tsx scripts/setup-super-admin.ts"
     },
     "dependencies": {
         "@babel/parser": "^7.28.5",
