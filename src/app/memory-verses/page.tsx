@@ -323,9 +323,17 @@ export default function MemoryVersesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Memory Verses</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">Memory Verses</h1>
+            {(premium || lifetime) ? (
+              <Badge className="bg-primary">Unlimited</Badge>
+            ) : (
+              <Badge variant="outline">10 Active Limit</Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Master Scripture through spaced repetition
+            {!(premium || lifetime) && " • Free: 10 active verses max"}
           </p>
         </div>
         
