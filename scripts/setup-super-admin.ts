@@ -8,6 +8,7 @@
  * npm run setup:admin
  */
 
+import 'dotenv/config';
 import { db } from '../src/lib/db';
 import { user, account } from '../src/lib/schema';
 import { eq } from 'drizzle-orm';
