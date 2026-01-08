@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { book, chapter, verse, scripture, observation, application, prayer } = body;
+    const { book, chapter, scripture, observation, application, prayer, isPublic } = body;
 
     if (!book || !chapter) {
       return NextResponse.json(
@@ -61,11 +61,11 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         book,
         chapter,
-        verse,
         scripture,
         observation,
         application,
         prayer,
+        isPublic: isPublic || false,
       })
       .returning();
 
