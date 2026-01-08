@@ -16,8 +16,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Check for Better Auth session cookie
-  const cookieStore = cookies();
+  // Check for Better Auth session cookie (await required in Next.js 15)
+  const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('better-auth.session_token');
   
   if (!sessionCookie?.value) {
