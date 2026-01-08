@@ -262,9 +262,8 @@
 
 ### API Integrations
 
-- **Bible API**: Scripture content from api.bible
 - **Email Service**: Nodemailer for transactional emails
-- **Stripe**: Payment processing for donations
+- **Stripe**: Payment processing for donations (optional)
 
 ### Forms & Validation
 
@@ -467,7 +466,7 @@
 
 - **Node.js** 20+ and npm/yarn/pnpm/bun
 - **PostgreSQL** database (local or hosted)
-- **Bible API Key** from [api.bible](https://scripture.api.bible/)
+- **Bible JSON data** from [Bible JSON Project](https://github.com/thiagobodruk/bible)
 
 ### Environment Variables
 
@@ -480,10 +479,6 @@ DATABASE_URL=postgresql://user:password@host:port/database
 # Better Auth
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=your-secret-key-here
-
-# Bible Configuration
-USE_LOCAL_BIBLE=true  # Set to 'true' to use local database, 'false' for API
-BIBLE_API_KEY=your-bible-api-key  # Optional if using local Bible database
 
 # Email Service (Nodemailer)
 EMAIL_HOST=smtp.gmail.com
@@ -695,7 +690,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Bible API**: Scripture content provided by [api.bible](https://scripture.api.bible/)
+- **Bible JSON Project**: Open-source Bible data from [thiagobodruk/bible](https://github.com/thiagobodruk/bible)
+- **Open Bible Data**: Additional translations from [scrollmapper](https://github.com/scrollmapper/bible_databases)
 - **Radix UI**: Accessible component primitives
 - **Vercel**: Hosting and deployment platform
 - **Open Source Community**: All the amazing libraries and tools
