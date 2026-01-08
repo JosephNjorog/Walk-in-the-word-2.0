@@ -185,7 +185,7 @@ export default function PricingPage() {
                   <ul className="space-y-3 text-sm">
                     {freeTierFeatures.map((feature) => (
                       <li key={feature.name} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                         <span>{feature.name}</span>
                       </li>
                     ))}
@@ -241,7 +241,7 @@ export default function PricingPage() {
                   <ul className="space-y-3 text-sm">
                     {premiumFeatures.map((feature, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                         <span className={feature.included ? "font-semibold" : ""}>
                           {feature.name}
                         </span>
@@ -297,7 +297,7 @@ export default function PricingPage() {
                   <ul className="space-y-3 text-sm">
                     {churchFeatures.map((feature, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <Check className="h-4 w-4 text-purple-500 mt-0.5 shrink-0" />
                         <span className={i === 0 ? "font-semibold" : ""}>
                           {feature.name}
                         </span>
@@ -324,11 +324,11 @@ export default function PricingPage() {
             transition={{ delay: 0.4 }}
             className="mt-8 max-w-4xl mx-auto"
           >
-            <Card className="border-2 border-yellow-500/50 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
+            <Card className="border-2 border-yellow-500/50 bg-linear-to-r from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                    <div className="h-12 w-12 rounded-full bg-yellow-500 flex items-center justify-center shrink-0">
                       <Infinity className="h-6 w-6 text-white" />
                     </div>
                     <div>

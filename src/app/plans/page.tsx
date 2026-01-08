@@ -248,7 +248,7 @@ export default function ReadingPlansPage() {
       </Tabs>
 
       {/* Benefits Section */}
-      <Card className="mt-12 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+      <Card className="mt-12 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
         <CardHeader>
           <CardTitle>Why Use Reading Plans?</CardTitle>
         </CardHeader>

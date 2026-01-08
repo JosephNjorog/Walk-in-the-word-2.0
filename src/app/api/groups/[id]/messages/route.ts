@@ -53,7 +53,6 @@ export async function GET(
       .select({
         id: groupMessages.id,
         content: groupMessages.content,
-        type: groupMessages.type,
         createdAt: groupMessages.createdAt,
         userId: user.id,
         userName: user.name,
@@ -129,7 +128,6 @@ export async function POST(
         groupId,
         userId: session.user.id,
         content: content.trim(),
-        type: type || 'text',
       })
       .returning();
 
@@ -138,7 +136,6 @@ export async function POST(
       .select({
         id: groupMessages.id,
         content: groupMessages.content,
-        type: groupMessages.type,
         createdAt: groupMessages.createdAt,
         userId: user.id,
         userName: user.name,

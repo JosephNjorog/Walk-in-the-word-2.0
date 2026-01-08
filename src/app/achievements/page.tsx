@@ -86,7 +86,7 @@ export default function AchievementsPage() {
       </div>
 
       {/* Level Card */}
-      <Card className="mb-8 bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0">
+      <Card className="mb-8 bg-linear-to-r from-purple-500 to-blue-500 text-white border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>

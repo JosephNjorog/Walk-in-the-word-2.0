@@ -229,7 +229,7 @@ export default function JournalPage() {
       </div>
 
       {/* Info Card */}
-      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+      <Card className="mb-6 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
         <CardHeader>
           <CardTitle className="text-lg">What is SOAP?</CardTitle>
         </CardHeader>

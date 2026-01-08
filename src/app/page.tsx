@@ -90,7 +90,7 @@ export default function LandingPage() {
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
@@ -150,7 +150,7 @@ export default function LandingPage() {
       </header>
 
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-background via-muted/30 to-background" />
         <div className="absolute inset-0">
           <div className="absolute top-20 right-[10%] w-[600px] h-[600px] bg-primary/8 rounded-full blur-[100px]" />
           <div className="absolute bottom-20 left-[10%] w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[100px]" />
@@ -215,8 +215,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="relative hidden lg:block"
             >
-              <Card className="relative overflow-hidden border-0 shadow-2xl rounded-[2rem] bg-white/80 backdrop-blur-xl ring-1 ring-black/5">
-                <div className="bg-gradient-to-br from-primary via-primary to-accent p-10 text-white relative overflow-hidden">
+              <Card className="relative overflow-hidden border-0 shadow-2xl rounded-4xl bg-white/80 backdrop-blur-xl ring-1 ring-black/5">
+                <div className="bg-linear-to-br from-primary via-primary to-accent p-10 text-white relative overflow-hidden">
                   <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                   <div className="flex items-center justify-between mb-8 relative z-10">
                     <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export default function LandingPage() {
               >
                 <Card className="h-full card-hover border-0 shadow-lg">
                   <CardContent className="p-6">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4">
+                    <div className="h-12 w-12 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center mb-4">
                       <feature.icon className="h-6 w-6 text-white" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
@@ -391,7 +391,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-gradient-to-r from-primary to-primary/90">
+      <section className="py-20 bg-linear-to-r from-primary to-primary/90">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -427,7 +427,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <div className="h-9 w-9 rounded-lg bg-linear-to-br from-primary to-accent flex items-center justify-center">
                   <BookOpen className="h-4 w-4 text-white" />
                 </div>
                 <span className="text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>

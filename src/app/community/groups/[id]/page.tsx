@@ -283,7 +283,7 @@ export default function GroupDetailPage() {
                                   {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                                 </span>
                               </div>
-                              <p className="text-sm break-words">{message.content}</p>
+                              <p className="text-sm wrap-break-word">{message.content}</p>
                             </div>
                           </div>
                         ))}

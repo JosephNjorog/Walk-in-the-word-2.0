@@ -430,7 +430,7 @@ export default function ReadingPage() {
             <div className="flex items-center gap-2">
               <div className="h-1 w-32 sm:w-48 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all"
+                  className="h-full bg-linear-to-r from-primary to-accent rounded-full transition-all"
                   style={{ width: "100%" }}
                 />
               </div>
@@ -456,7 +456,7 @@ export default function ReadingPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <div className="h-12 w-12 rounded-full bg-linear-to-br from-primary to-accent flex items-center justify-center">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
