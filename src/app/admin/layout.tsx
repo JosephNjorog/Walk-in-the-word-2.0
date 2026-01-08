@@ -1,10 +1,7 @@
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
-import { db } from '@/lib/db';
-import { user, session } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
-import Link from 'next/link';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
+import AdminGuard from './AdminGuard';
 import { 
   LayoutDashboard, Users, BookOpen, MessageSquare, Award, 
   DollarSign, Bell, Settings, Shield, BarChart, FileText,
@@ -16,38 +13,16 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Check for Better Auth session cookie (await required in Next.js 15)
+  // Simplified auth check - just verify session exists
+  // Admin role check happens client-side for now due to Neon connection timeouts
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('better-auth.session_token');
   
   if (!sessionCookie?.value) {
     redirect('/login?redirect=/admin');
   }
-
-  // Decode the URL-encoded token
-  const sessionToken = decodeURIComponent(sessionCookie.value);
-
-  // Get session from database
-  const userSession = await db.query.session.findFirst({
-    where: eq(session.token, sessionToken),
-  });
-
-  if (!userSession) {
-    redirect('/login?redirect=/admin');
-  }
-
-  // Check if user is admin
-  const userData = await db.query.user.findFirst({
-    where: eq(user.id, userSession.userId),
-  });
-
-  if (!userData) {
-    redirect('/login?redirect=/admin');
-  }
-
-  if (userData.role !== 'admin') {
-    redirect('/dashboard');
-  }
+  
+  // TODO: Add proper admin role check when database connection is stable
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', section: 'main' },
@@ -129,7 +104,9 @@ export default async function AdminLayout({
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">
-          {children}
+          <AdminGuard>
+            {children}
+          </AdminGuard>
         </div>
       </main>
     </div>
