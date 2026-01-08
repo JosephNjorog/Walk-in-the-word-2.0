@@ -84,6 +84,18 @@ export const auth = betterAuth({
                 type: "number",
                 defaultValue: 0,
             },
+            subscriptionTier: {
+                type: "string",
+                defaultValue: "free",
+            },
+            subscriptionStatus: {
+                type: "string",
+                defaultValue: "inactive",
+            },
+            subscriptionExpiresAt: {
+                type: "date",
+                required: false,
+            },
         }
     },
     onAfterSignUp: async (user) => {

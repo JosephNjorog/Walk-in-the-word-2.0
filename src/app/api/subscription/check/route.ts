@@ -9,8 +9,14 @@ export async function GET(req: NextRequest) {
     });
 
     if (!session) {
+      console.log("[Subscription API] No session found");
       return NextResponse.json({ premium: false, message: 'Not authenticated' }, { status: 401 });
     }
+
+    console.log("[Subscription API] User:", session.user.email);
+    console.log("[Subscription API] Tier:", session.user.subscriptionTier);
+    console.log("[Subscription API] Status:", session.user.subscriptionStatus);
+    console.log("[Subscription API] Expires:", session.user.subscriptionExpiresAt);
 
     // Check if subscription is active and not expired (including lifetime access)
     const isPremium = 
@@ -22,15 +28,19 @@ export async function GET(req: NextRequest) {
     const hasLifetimeAccess = session.user.subscriptionExpiresAt && 
       new Date(session.user.subscriptionExpiresAt).getFullYear() > new Date().getFullYear() + 50;
 
-    return NextResponse.json({
+    const response = {
       premium: isPremium,
       lifetime: hasLifetimeAccess,
       tier: session.user.subscriptionTier,
       status: session.user.subscriptionStatus,
       expiresAt: session.user.subscriptionExpiresAt,
-    });
+    };
+
+    console.log("[Subscription API] Returning:", response);
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error checking subscription:', error);
+    console.error('[Subscription API] Error checking subscription:', error);
     return NextResponse.json({ premium: false, error: 'Internal server error' }, { status: 500 });
   }
 }
