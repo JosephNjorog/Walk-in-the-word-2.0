@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,6 +28,7 @@ interface JournalEntry {
 }
 
 export default function JournalPage() {
+  const { premium, lifetime } = useSubscription();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -115,9 +117,15 @@ export default function JournalPage() {
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">SOAP Journal</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">SOAP Journal</h1>
+            {(premium || lifetime) && (
+              <Badge className="bg-primary">Unlimited</Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Scripture • Observation • Application • Prayer
+            {!(premium || lifetime) && " • Free tier: Unlimited entries"}
           </p>
         </div>
         

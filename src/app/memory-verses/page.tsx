@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -42,6 +43,7 @@ interface MemoryVerse {
 }
 
 export default function MemoryVersesPage() {
+  const { premium, lifetime } = useSubscription();
   const [verses, setVerses] = useState<MemoryVerse[]>([]);
   const [dueVerses, setDueVerses] = useState<MemoryVerse[]>([]);
   const [loading, setLoading] = useState(true);
