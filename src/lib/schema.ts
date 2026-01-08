@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, boolean, unique, serial, varchar, index } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -16,6 +16,12 @@ export const user = pgTable('user', {
   currentStreak: integer('current_streak').default(0),
   longestStreak: integer('longest_streak').default(0),
   lastReadAt: timestamp('last_read_at', { withTimezone: true }),
+  bio: text('bio'),
+  location: text('location'),
+  reputation: integer('reputation').default(0),
+  level: text('level').default('Seeker'), // Seeker, Disciple, Teacher, Scholar
+  isVerified: boolean('is_verified').default(false),
+  role: text('role').default('member'), // member, pastor, admin
 });
 
 export const session = pgTable('session', {
