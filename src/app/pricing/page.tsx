@@ -248,18 +248,16 @@ export default function PricingPage() {
                   </CardDescription>
                   <div className="pt-4">
                     <div className="text-4xl font-bold">
-                      ${billingInterval === "monthly" 
-                        ? pricing.premium.monthly.amount 
-                        : (pricing.premium.yearly.amount / 12).toFixed(2)}
+                      {currencySymbol}{billingInterval === "monthly" 
+                        ? (currency === "usd" ? pricing.premium.monthly.usd : pricing.premium.monthly.ksh)
+                        : (currency === "usd" ? (pricing.premium.yearly.usd / 12).toFixed(2) : Math.round(pricing.premium.yearly.ksh / 12))}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      per month • ₦{billingInterval === "monthly" 
-                        ? pricing.premium.monthly.ngn.toLocaleString() 
-                        : Math.round(pricing.premium.yearly.ngn / 12).toLocaleString()}
+                      per month • {currencyLabel}
                     </div>
                     {billingInterval === "yearly" && (
                       <div className="text-xs text-green-600 font-medium mt-1">
-                        Save ${pricing.premium.yearly.save}/year
+                        Save {currencySymbol}{currency === "usd" ? pricing.premium.yearly.save : Math.round(pricing.premium.yearly.save * 130)}/year
                       </div>
                     )}
                   </div>
@@ -304,18 +302,16 @@ export default function PricingPage() {
                   </CardDescription>
                   <div className="pt-4">
                     <div className="text-4xl font-bold">
-                      ${billingInterval === "monthly" 
-                        ? pricing.church.monthly.amount 
-                        : (pricing.church.yearly.amount / 12).toFixed(2)}
+                      {currencySymbol}{billingInterval === "monthly" 
+                        ? (currency === "usd" ? pricing.church.monthly.usd : pricing.church.monthly.ksh)
+                        : (currency === "usd" ? (pricing.church.yearly.usd / 12).toFixed(2) : Math.round(pricing.church.yearly.ksh / 12))}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      per month • ₦{billingInterval === "monthly" 
-                        ? pricing.church.monthly.ngn.toLocaleString() 
-                        : Math.round(pricing.church.yearly.ngn / 12).toLocaleString()}
+                      per month • {currencyLabel}
                     </div>
                     {billingInterval === "yearly" && (
                       <div className="text-xs text-green-600 font-medium mt-1">
-                        Save ${pricing.church.yearly.save}/year
+                        Save {currencySymbol}{currency === "usd" ? pricing.church.yearly.save : Math.round(pricing.church.yearly.save * 130)}/year
                       </div>
                     )}
                   </div>
@@ -364,9 +360,9 @@ export default function PricingPage() {
                         Pay once, use forever. All Premium features + future updates included.
                       </p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold">${pricing.lifetime.amount}</span>
+                        <span className="text-3xl font-bold">{currencySymbol}{currency === "usd" ? pricing.lifetime.usd : pricing.lifetime.ksh.toLocaleString()}</span>
                         <span className="text-sm text-muted-foreground">
-                          one-time • ₦{pricing.lifetime.ngn.toLocaleString()}
+                          one-time • {currencyLabel}
                         </span>
                       </div>
                     </div>
