@@ -105,6 +105,9 @@ export default function LandingPage() {
               <a href="#how-it-works" className="text-sm font-medium hover:text-primary transition-colors">
                 How It Works
               </a>
+              <Link href="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
+                Pricing
+              </Link>
               <Link href="/login">
                 <Button variant="ghost" size="sm">
                   Log In
@@ -132,6 +135,7 @@ export default function LandingPage() {
             <div className="px-4 py-4 space-y-3">
               <a href="#features" className="block py-2 text-sm font-medium">Features</a>
               <a href="#how-it-works" className="block py-2 text-sm font-medium">How It Works</a>
+              <Link href="/pricing" className="block py-2 text-sm font-medium">Pricing</Link>
               <div className="flex flex-col gap-2 pt-2">
                 <Link href="/login">
                   <Button variant="outline" className="w-full">Log In</Button>
@@ -167,7 +171,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur border shadow-sm text-sm font-medium mb-6"
               >
                 <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-muted-foreground">100% Free Forever</span>
+                <span className="text-muted-foreground">Enhanced Free Tier • Premium Coming Soon</span>
               </motion.div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
@@ -395,11 +399,11 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-              Completely Free. Forever.
+              Start Free. Upgrade When Ready.
             </h2>
-            <p className="text-lg text-white/90 mb-2">No credit card. No premium tiers. No hidden costs.</p>
+            <p className="text-lg text-white/90 mb-2">Enhanced free tier with 20+ features. Premium plans coming soon.</p>
             <p className="text-white/70 mb-8 max-w-lg mx-auto">
-              Walk in the Word is built by believers, for believers. Our mission is to help everyone read God&apos;s Word daily.
+              Walk in the Word is built by believers, for believers. Our mission is to help everyone read God&apos;s Word daily. Premium features help us serve more people.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
@@ -408,10 +412,9 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/donate">
+              <Link href="/pricing">
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 text-base px-8 h-12 rounded-xl">
-                  <Heart className="mr-2 h-5 w-5" />
-                  Support Our Mission
+                  View Pricing
                 </Button>
               </Link>
             </div>
@@ -439,6 +442,7 @@ export default function LandingPage() {
               <h4 className="font-semibold mb-3 text-sm">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
+                <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
                 <li><Link href="/donate" className="hover:text-primary transition-colors">Donate</Link></li>
               </ul>
             </div>
