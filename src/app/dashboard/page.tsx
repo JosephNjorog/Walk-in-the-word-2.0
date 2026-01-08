@@ -25,6 +25,8 @@ import {
   MoreHorizontal,
   Plus,
   Loader2,
+  Crown,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -279,6 +281,42 @@ export default function DashboardPage() {
                     </Link>
                   ))}
                 </nav>
+              </CardContent>
+            </Card>
+
+            {/* Subscription Status Card */}
+            <Card className={`border-0 shadow-lg ${lifetime ? 'bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20' : premium ? 'bg-linear-to-br from-primary/5 to-accent/5' : ''}`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {lifetime ? (
+                        <>
+                          <Sparkles className="h-5 w-5 text-yellow-600" />
+                          <span className="font-bold text-yellow-700 dark:text-yellow-500">Lifetime Access</span>
+                        </>
+                      ) : premium ? (
+                        <>
+                          <Crown className="h-5 w-5 text-primary" />
+                          <span className="font-bold text-primary">Premium Member</span>
+                        </>
+                      ) : (
+                        <>
+                          <Heart className="h-5 w-5 text-muted-foreground" />
+                          <span className="font-bold">Free Tier</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {lifetime ? 'All features unlocked forever' : premium ? 'All premium features active' : 'Upgrade for more features'}
+                    </p>
+                  </div>
+                  {!premium && !lifetime && (
+                    <Link href="/pricing">
+                      <Button size="sm">Upgrade</Button>
+                    </Link>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </aside>
