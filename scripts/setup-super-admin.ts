@@ -1,68 +1,103 @@
 /**
- * Setup Script: Set Super Admin Role
+ * Setup Script: Create Super Admin User
  * 
- * This script sets a user as super admin by their email address.
- * Run this once after the user registers to grant admin access.
+ * This script creates a super admin user with predefined credentials.
+ * Run this to create the admin account directly in the database.
  * 
  * Usage:
- * 1. Make sure the user has registered with email: mwangijoenjoroge@gmail.com
- * 2. Run: npm run setup:admin
- * 
- * Or manually via API:
- * POST /api/admin/setup
- * {
- *   "email": "mwangijoenjoroge@gmail.com",
- *   "secret": "your-secret-key"
- * }
+ * npm run setup:admin
  */
 
 import { db } from '../src/lib/db';
-import { user } from '../src/lib/schema';
+import { user, account } from '../src/lib/schema';
 import { eq } from 'drizzle-orm';
 
-const SUPER_ADMIN_EMAIL = 'mwangijoenjoroge@gmail.com';
+const SUPER_ADMIN = {
+  email: 'mwangijoenjoroge@gmail.com',
+  password: 'Sirintai83#',
+  name: 'Super Admin',
+  username: 'superadmin',
+};
 
 async function setupSuperAdmin() {
   try {
     console.log('🔧 Setting up Super Admin...\n');
     
-    // Find user by email
+    // Check if user already exists
     const existingUser = await db.query.user.findFirst({
-      where: eq(user.email, SUPER_ADMIN_EMAIL),
+      where: eq(user.email, SUPER_ADMIN.email),
     });
 
-    if (!existingUser) {
-      console.error(`❌ Error: User with email ${SUPER_ADMIN_EMAIL} not found.`);
-      console.log('\n📝 Please register this user first, then run this script again.');
-      process.exit(1);
-    }
+    if (existingUser) {
+      console.log(`✅ User already exists: ${existingUser.name} (${existingUser.email})`);
+      
+      // Just update to admin role
+      const result = await db
+        .update(user)
+        .set({ 
+          role: 'admin',
+          isVerified: true,
+        })
+        .where(eq(user.email, SUPER_ADMIN.email))
+        .returning();
 
-    console.log(`✅ Found user: ${existingUser.name} (${existingUser.email})`);
-    
-    // Update user to admin role
-    const result = await db
-      .update(user)
-      .set({ 
-        role: 'admin',
-        isVerified: true,
-      })
-      .where(eq(user.email, SUPER_ADMIN_EMAIL))
-      .returning();
-
-    if (result.length > 0) {
-      console.log('\n🎉 SUCCESS! Super Admin has been set up.');
+      console.log('\n🎉 User updated to Super Admin!');
       console.log('\n📋 Admin Details:');
       console.log(`   Name: ${result[0].name}`);
       console.log(`   Email: ${result[0].email}`);
       console.log(`   Role: ${result[0].role}`);
       console.log(`   Verified: ${result[0].isVerified}`);
-      console.log('\n🔐 You can now access the admin dashboard at: /admin');
-      console.log('\n✨ Login with:');
-      console.log(`   Email: ${SUPER_ADMIN_EMAIL}`);
-      console.log(`   Password: Sirintai83#`);
     } else {
-      console.error('❌ Failed to update user role.');
+      console.log('📝 Creating new super admin user...');
+      
+      // Generate user ID
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create user
+      const newUser = await db
+        .insert(user)
+        .values({
+          id: userId,
+          email: SUPER_ADMIN.email,
+          name: SUPER_ADMIN.name,
+          username: SUPER_ADMIN.username,
+          emailVerified: true,
+          isVerified: true,
+          role: 'admin',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      // Hash password (using bcrypt)
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(SUPER_ADMIN.password, 10);
+
+      // Create account with password
+      await db.insert(account).values({
+        id: `account_${Date.now()}`,
+        accountId: userId,
+        providerId: 'credential',
+        userId: userId,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      console.log('\n🎉 SUCCESS! Super Admin created!');
+      console.log('\n📋 Admin Details:');
+      console.log(`   Name: ${newUser[0].name}`);
+      console.log(`   Email: ${newUser[0].email}`);
+      console.log(`   Username: ${newUser[0].username}`);
+      console.log(`   Role: ${newUser[0].role}`);
+      console.log(`   Verified: ${newUser[0].isVerified}`);
     }
+
+    console.log('\n🔐 Access the admin dashboard at: http://localhost:3000/admin');
+    console.log('\n✨ Login credentials:');
+    console.log(`   Email: ${SUPER_ADMIN.email}`);
+    console.log(`   Password: ${SUPER_ADMIN.password}`);
+    console.log('\n⚠️  Remember to change the password after first login!');
 
     process.exit(0);
   } catch (error) {
