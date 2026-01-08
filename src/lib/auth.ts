@@ -111,5 +111,21 @@ export const auth = betterAuth({
                 .set({ username: uniqueUsername })
                 .where(eq(schema.user.id, user.id));
         }
+
+        // Send welcome email
+        if (user.email) {
+            try {
+                const { sendEmail, getWelcomeEmailHtml } = await import("./email");
+                await sendEmail({
+                    to: user.email,
+                    subject: "Welcome to Walk in the Word! 🙏",
+                    html: getWelcomeEmailHtml(user.name || "Friend"),
+                });
+                console.log(`Welcome email sent to ${user.email}`);
+            } catch (error) {
+                console.error("Failed to send welcome email:", error);
+                // Don't throw - we don't want to fail signup if email fails
+            }
+        }
     },
 });
