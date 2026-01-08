@@ -22,6 +22,11 @@ export const user = pgTable('user', {
   level: text('level').default('Seeker'), // Seeker, Disciple, Teacher, Scholar
   isVerified: boolean('is_verified').default(false),
   role: text('role').default('member'), // member, pastor, admin
+  
+  // Subscription fields
+  subscriptionTier: text('subscription_tier').default('free'), // free, premium
+  subscriptionStatus: text('subscription_status').default('inactive'), // active, inactive, cancelled
+  subscriptionExpiresAt: timestamp('subscription_expires_at', { withTimezone: true }),
 });
 
 export const session = pgTable('session', {
