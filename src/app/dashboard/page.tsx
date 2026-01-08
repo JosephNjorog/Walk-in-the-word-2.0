@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { BIBLE_BOOKS } from "@/lib/bible-utils";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Badge } from "@/components/ui/badge";
 
 const dailyVerse = {
   text: "Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
@@ -72,6 +74,7 @@ function getReadingLevel(chaptersRead: number): string {
 export default function DashboardPage() {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
+  const { premium, lifetime, loading: subLoading } = useSubscription();
   const [progress, setProgress] = useState<{ book: string; chapter: number }[]>([]);
   const [reflections, setReflections] = useState<{ id: string; book: string; chapter: number; content: string; createdAt: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -177,7 +180,11 @@ export default function DashboardPage() {
                       <AvatarImage src={user.image || undefined} />
                       <AvatarFallback>{user.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}</AvatarFallback>
                     </Avatar>
-                    <span className="hidden sm:block font-medium">{user.name}</span>
+                    <div className="hidden sm:flex items-center gap-2">
+                      <span className="font-medium">{user.name}</span>
+                      {lifetime && <Badge className="bg-yellow-500 text-white">Lifetime</Badge>}
+                      {premium && !lifetime && <Badge className="bg-primary">Premium</Badge>}
+                    </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
