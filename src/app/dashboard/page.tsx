@@ -80,16 +80,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/login");
-    } else if (session?.user) {
-      // Check if user is admin and redirect to admin dashboard
-      fetch('/api/auth/get-session')
-        .then(res => res.json())
-        .then(data => {
-          if (data?.user?.role === 'admin') {
-            router.push('/admin');
-          }
-        })
-        .catch(err => console.error('Error checking admin role:', err));
+    } else if (session?.user?.email === 'mwangijoenjoroge@gmail.com') {
+      // Direct check for admin email - redirect immediately
+      router.push('/admin');
     }
   }, [session, isPending, router]);
 
