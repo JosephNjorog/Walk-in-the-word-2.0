@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const plans = await db.select().from(readingPlans).orderBy(readingPlans.name);
+    const plans = await db.select().from(readingPlanTemplates);
     return NextResponse.json({ plans });
   } catch (error) {
     console.error("Reading Plans GET Error:", error);
