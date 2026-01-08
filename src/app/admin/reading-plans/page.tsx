@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { readingPlans, userReadingPlans } from '@/lib/schema';
+import { readingPlanTemplates, userReadingPlans } from '@/lib/schema';
 import { sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import {
 
 export default async function ReadingPlansPage() {
   // Get reading plan stats
-  const totalPlans = await db.select({ count: sql<number>`count(*)` }).from(readingPlans);
+  const totalPlans = await db.select({ count: sql<number>`count(*)` }).from(readingPlanTemplates);
   const totalEnrollments = await db.select({ count: sql<number>`count(*)` }).from(userReadingPlans);
 
   const planTypes = [
