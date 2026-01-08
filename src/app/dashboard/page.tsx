@@ -27,6 +27,11 @@ import {
   Loader2,
   Crown,
   Sparkles,
+  Brain,
+  FileText,
+  BookMarked,
+  Users2,
+  Sparkles as SparklesAlt,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -369,6 +374,112 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </Card>
+            </motion.div>
+
+            {/* Quick Access Features */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="mb-4">
+                <h2 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+                  Quick Access
+                </h2>
+                <p className="text-sm text-muted-foreground">Jump to your favorite features</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {/* Reading Plans */}
+                <Link href="/plans">
+                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-6 text-center">
+                      <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                        <BookMarked className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Reading Plans</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {premium || lifetime ? "20+ Plans" : "5 Basic Plans"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                {/* Memory Verses */}
+                <Link href="/memory-verses">
+                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-6 text-center">
+                      <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-3">
+                        <Brain className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Memory Verses</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {premium || lifetime ? "Unlimited" : "10 Active"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                {/* Journal */}
+                <Link href="/journal">
+                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-6 text-center">
+                      <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
+                        <FileText className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h3 className="font-semibold mb-1">SOAP Journal</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {premium || lifetime ? "Unlimited" : "Unlimited"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                {/* Forums */}
+                <Link href="/community/forums">
+                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-6 text-center">
+                      <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-3">
+                        <MessageCircle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Forums</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {premium || lifetime ? "Unlimited Posts" : "10/Week"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                {/* Small Groups */}
+                <Link href="/community/groups">
+                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-6 text-center">
+                      <div className="h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center mx-auto mb-3">
+                        <Users2 className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Small Groups</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {premium || lifetime ? "Unlimited" : "Join 3"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                {/* Testimonies */}
+                <Link href="/community/testimonies">
+                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-6 text-center">
+                      <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mx-auto mb-3">
+                        <SparklesAlt className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Testimonies</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {premium || lifetime ? "Unlimited" : "2/Week"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </div>
             </motion.div>
 
             <div className="space-y-4">
