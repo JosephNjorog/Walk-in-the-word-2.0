@@ -52,6 +52,20 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    advanced: {
+        useSecureCookies: process.env.NODE_ENV === "production",
+        defaultCookieAttributes: {
+            sameSite: "lax",
+            path: "/",
+            httpOnly: true,
+        },
+    },
+    // Custom error page
+    pages: {
+        signIn: "/login",
+        signUp: "/register",
+        error: "/auth/error",
+    },
     socialProviders: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE" ? {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID as string,
