@@ -18,27 +18,14 @@ export default async function AdminLayout({
 }) {
   // Check for Better Auth session cookie
   const cookieStore = cookies();
+  const sessionCookie = cookieStore.get('better-auth.session_token');
   
-  // Better Auth uses 'better-auth.session_token' as default
-  let sessionToken = cookieStore.get('better-auth.session_token')?.value;
-  
-  // Also try without the dot (some versions use underscore)
-  if (!sessionToken) {
-    sessionToken = cookieStore.get('better_auth_session_token')?.value;
-  }
-  
-  // Try session.token as well
-  if (!sessionToken) {
-    sessionToken = cookieStore.get('session.token')?.value;
-  }
-
-  // For development, log available cookies to debug
-  if (!sessionToken) {
-    console.log('No session token found. Available cookies:', 
-      Array.from(cookieStore.getAll()).map(c => c.name)
-    );
+  if (!sessionCookie?.value) {
     redirect('/login?redirect=/admin');
   }
+
+  // Decode the URL-encoded token
+  const sessionToken = decodeURIComponent(sessionCookie.value);
 
   // Get session from database
   const userSession = await db.query.session.findFirst({
@@ -46,7 +33,6 @@ export default async function AdminLayout({
   });
 
   if (!userSession) {
-    console.log('Session not found in database for token:', sessionToken);
     redirect('/login?redirect=/admin');
   }
 
@@ -56,16 +42,12 @@ export default async function AdminLayout({
   });
 
   if (!userData) {
-    console.log('User not found for session');
     redirect('/login?redirect=/admin');
   }
 
   if (userData.role !== 'admin') {
-    console.log('User is not admin:', userData.email, 'Role:', userData.role);
     redirect('/dashboard');
   }
-  
-  console.log('Admin access granted for:', userData.email);
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', section: 'main' },
