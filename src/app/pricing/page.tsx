@@ -79,18 +79,22 @@ const churchFeatures = [
 
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
+  const [currency, setCurrency] = useState<"usd" | "ksh">("usd");
 
   const pricing = {
     premium: {
-      monthly: { amount: 4.99, ngn: 7500 },
-      yearly: { amount: 49, ngn: 73500, save: 10 }
+      monthly: { usd: 4.99, ksh: 650 },
+      yearly: { usd: 49, ksh: 6400, save: 10 }
     },
     church: {
-      monthly: { amount: 19.99, ngn: 30000 },
-      yearly: { amount: 199, ngn: 300000, save: 40 }
+      monthly: { usd: 19.99, ksh: 2600 },
+      yearly: { usd: 199, ksh: 26000, save: 40 }
     },
-    lifetime: { amount: 199, ngn: 300000 }
+    lifetime: { usd: 199, ksh: 26000 }
   };
+
+  const currencySymbol = currency === "usd" ? "$" : "KSh";
+  const currencyLabel = currency === "usd" ? "USD" : "KSH (Kenya)";
 
   return (
     <div className="min-h-screen bg-background">
