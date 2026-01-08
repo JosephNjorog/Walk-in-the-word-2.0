@@ -6,7 +6,12 @@
         "dev": "next dev --turbopack",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio",
+        "import-bible": "tsx scripts/import-bible-data.ts"
     },
     "dependencies": {
         "@babel/parser": "^7.28.5",
@@ -58,6 +63,7 @@
         "cmdk": "^1.1.1",
         "cobe": "^0.6.5",
         "date-fns": "^4.1.0",
+        "dotenv": "^17.2.3",
         "dotted-map": "^2.2.3",
         "drizzle-kit": "^0.31.6",
         "drizzle-orm": "^0.41.0",
@@ -112,6 +118,7 @@
         "eslint": "^9.38.0",
         "eslint-config-next": "^16.0.1",
         "tailwindcss": "^4",
+        "tsx": "^4.21.0",
         "tw-animate-css": "^1.4.0",
         "typescript": "^5"
     }
