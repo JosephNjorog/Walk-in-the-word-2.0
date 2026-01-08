@@ -12,14 +12,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ premium: false, message: 'Not authenticated' }, { status: 401 });
     }
 
-    // Check if subscription is active and not expired
+    // Check if subscription is active and not expired (including lifetime access)
     const isPremium = 
       session.user.subscriptionTier === 'premium' && 
       session.user.subscriptionStatus === 'active' &&
       (!session.user.subscriptionExpiresAt || new Date(session.user.subscriptionExpiresAt) > new Date());
+    
+    // Check if user has lifetime access (expiry date far in the future, e.g., 50+ years)
+    const hasLifetimeAccess = session.user.subscriptionExpiresAt && 
+      new Date(session.user.subscriptionExpiresAt).getFullYear() > new Date().getFullYear() + 50;
 
     return NextResponse.json({
       premium: isPremium,
+      lifetime: hasLifetimeAccess,
       tier: session.user.subscriptionTier,
       status: session.user.subscriptionStatus,
       expiresAt: session.user.subscriptionExpiresAt,
