@@ -130,26 +130,49 @@ export default function PricingPage() {
             </p>
             
             {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-3 mb-12">
-              <span className={billingInterval === "monthly" ? "font-semibold" : "text-muted-foreground"}>
-                Monthly
-              </span>
-              <button
-                onClick={() => setBillingInterval(billingInterval === "monthly" ? "yearly" : "monthly")}
-                className="relative w-14 h-7 rounded-full bg-primary transition-colors"
-              >
-                <span
-                  className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
-                    billingInterval === "yearly" ? "translate-x-8" : "translate-x-1"
+            <div className="flex flex-col items-center gap-4 mb-8">
+              <div className="flex items-center justify-center gap-3">
+                <span className={billingInterval === "monthly" ? "font-semibold" : "text-muted-foreground"}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === "monthly" ? "yearly" : "monthly")}
+                  className="relative w-14 h-7 rounded-full bg-primary transition-colors"
+                >
+                  <span
+                    className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                      billingInterval === "yearly" ? "translate-x-8" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+                <span className={billingInterval === "yearly" ? "font-semibold" : "text-muted-foreground"}>
+                  Yearly
+                  {billingInterval === "yearly" && (
+                    <Badge variant="secondary" className="ml-2">Save 17%</Badge>
+                  )}
+                </span>
+              </div>
+              
+              {/* Currency Toggle */}
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full border bg-card">
+                <span className="text-sm text-muted-foreground">Currency:</span>
+                <button
+                  onClick={() => setCurrency(currency === "usd" ? "ksh" : "usd")}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    currency === "usd" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                   }`}
-                />
-              </button>
-              <span className={billingInterval === "yearly" ? "font-semibold" : "text-muted-foreground"}>
-                Yearly
-                {billingInterval === "yearly" && (
-                  <Badge variant="secondary" className="ml-2">Save 17%</Badge>
-                )}
-              </span>
+                >
+                  USD ($)
+                </button>
+                <button
+                  onClick={() => setCurrency(currency === "usd" ? "ksh" : "usd")}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    currency === "ksh" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  KSH (KSh)
+                </button>
+              </div>
             </div>
 
             {/* Payment Notice */}
