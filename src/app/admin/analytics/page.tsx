@@ -266,7 +266,7 @@ export default async function AnalyticsPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
+                        className="bg-linear-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -304,7 +304,7 @@ export default async function AnalyticsPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className={`bg-gradient-to-r ${colors[level.level as keyof typeof colors] || 'from-gray-400 to-gray-600'} h-2 rounded-full transition-all`}
+                        className={`bg-linear-to-r ${colors[level.level as keyof typeof colors] || 'from-gray-400 to-gray-600'} h-2 rounded-full transition-all`}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
