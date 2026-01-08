@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ interface ReadingPlan {
 
 export default function ReadingPlansPage() {
   const router = useRouter();
+  const { premium, lifetime } = useSubscription();
   const [plans, setPlans] = useState<ReadingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
@@ -138,12 +140,20 @@ export default function ReadingPlansPage() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <BookOpen className="h-8 w-8" />
-          Reading Plans
-        </h1>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <BookOpen className="h-8 w-8" />
+            Reading Plans
+          </h1>
+          {(premium || lifetime) ? (
+            <Badge className="bg-primary">20+ Plans</Badge>
+          ) : (
+            <Badge variant="outline">5 Basic Plans</Badge>
+          )}
+        </div>
         <p className="text-muted-foreground">
           Structured plans to guide your Bible reading journey
+          {!(premium || lifetime) && " • Free: 5 basic plans • Premium: 20+ advanced plans"}
         </p>
       </div>
 

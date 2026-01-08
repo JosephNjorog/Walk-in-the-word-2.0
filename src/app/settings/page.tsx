@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import {
 import { toast } from "sonner";
 
 export default function SettingsPage() {
+  const { premium, lifetime, tier, expiresAt } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
@@ -145,6 +147,44 @@ export default function SettingsPage() {
           </TabsList>
 
           <TabsContent value="account" className="space-y-6">
+            {/* Subscription Status Card */}
+            <Card className={`border-0 shadow-lg ${lifetime ? 'bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20' : premium ? 'bg-linear-to-br from-primary/5 to-accent/5' : ''}`}>
+              <CardHeader>
+                <CardTitle>Subscription Status</CardTitle>
+                <CardDescription>
+                  Your current plan and benefits
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-lg">
+                      {lifetime ? '🌟 Lifetime Access' : premium ? '👑 Premium Member' : '📘 Free Tier'}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {lifetime ? 'All features unlocked forever' : premium ? `Active until ${expiresAt ? new Date(expiresAt).toLocaleDateString() : 'N/A'}` : 'Upgrade for more features'}
+                    </div>
+                  </div>
+                  {!premium && !lifetime && (
+                    <Link href="/pricing">
+                      <Button>Upgrade</Button>
+                    </Link>
+                  )}
+                </div>
+                <div className="pt-4 border-t">
+                  <div className="text-sm font-medium mb-2">Your Benefits:</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>✓ {premium || lifetime ? 'Unlimited' : '10'} Memory Verses</div>
+                    <div>✓ {premium || lifetime ? 'Unlimited' : '10'} Forum Posts/Week</div>
+                    <div>✓ {premium || lifetime ? 'Unlimited' : '2'} Testimonies/Week</div>
+                    <div>✓ {premium || lifetime ? '20+' : '5'} Reading Plans</div>
+                    <div>✓ {premium || lifetime ? 'Unlimited' : '100'} Bookmarks</div>
+                    <div>✓ {premium || lifetime ? 'Unlimited' : '3'} Small Groups</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>

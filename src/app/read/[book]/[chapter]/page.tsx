@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 import Confetti from "react-confetti";
 import { useParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useSubscription } from "@/hooks/use-subscription";
 import { toast } from "sonner";
 import { getChapterId, getNavigation } from "@/lib/bible-utils";
 
@@ -66,7 +67,10 @@ export default function ReadingPage() {
   const chapterNum = parseInt(chapter);
   
   const { data: session } = authClient.useSession();
+  const { premium, lifetime } = useSubscription();
   const [bibleId, setBibleId] = useState("9879dbb7cfe39e4d-01"); // WEB - World English Bible
+  const [parallelVersions, setParallelVersions] = useState<string[]>([]);
+  const [parallelContent, setParallelContent] = useState<Record<string, { content: string; reference: string }>>({});
   const [versions, setVersions] = useState<{ id: string; abbreviation: string; name: string }[]>([]);
   const [versionSearch, setVersionSearch] = useState("");
   const [content, setContent] = useState<{ content: string; reference: string } | null>(null);
@@ -234,6 +238,11 @@ export default function ReadingPage() {
               <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {displayBook} {chapter}
               </span>
+              {(premium || lifetime) && (
+                <Badge className={lifetime ? "bg-yellow-500 text-white ml-2" : "bg-primary ml-2"} variant="default">
+                  {lifetime ? "Lifetime" : "Premium"}
+                </Badge>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

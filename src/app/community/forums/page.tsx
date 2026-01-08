@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -43,12 +44,14 @@ interface Topic {
 
 export default function ForumsPage() {
   const router = useRouter();
+  const { premium, lifetime } = useSubscription();
   const [categories, setCategories] = useState<Category[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [weeklyPostCount, setWeeklyPostCount] = useState(0);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -135,9 +138,17 @@ export default function ForumsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Discussion Forums</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">Discussion Forums</h1>
+            {(premium || lifetime) ? (
+              <Badge className="bg-primary">Unlimited Posts</Badge>
+            ) : (
+              <Badge variant="outline">10 Posts/Week</Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Share insights, ask questions, and discuss Scripture with the community
+            {!(premium || lifetime) && " • Free: 10 posts per week"}
           </p>
         </div>
         

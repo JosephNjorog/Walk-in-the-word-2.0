@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,11 +26,13 @@ interface Testimony {
 }
 
 export default function TestimoniesPage() {
+  const { premium, lifetime } = useSubscription();
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [weeklyTestimonies, setWeeklyTestimonies] = useState(0);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -99,12 +102,20 @@ export default function TestimoniesPage() {
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-yellow-500" />
-            Testimonies
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Sparkles className="h-8 w-8 text-yellow-500" />
+              Testimonies
+            </h1>
+            {(premium || lifetime) ? (
+              <Badge className="bg-primary">Unlimited</Badge>
+            ) : (
+              <Badge variant="outline">2/Week</Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Share how God has worked in your life and encourage others
+            {!(premium || lifetime) && " • Free: 2 testimonies per week"}
           </p>
         </div>
         

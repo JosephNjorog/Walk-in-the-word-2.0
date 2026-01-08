@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -31,12 +32,14 @@ interface Group {
 
 export default function GroupsPage() {
   const router = useRouter();
+  const { premium, lifetime } = useSubscription();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [myGroupsCount, setMyGroupsCount] = useState(0);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -123,9 +126,17 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Small Groups</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">Small Groups</h1>
+            {(premium || lifetime) ? (
+              <Badge className="bg-primary">Unlimited Groups</Badge>
+            ) : (
+              <Badge variant="outline">Create 1 Group</Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Join a community of believers for Bible study, fellowship, and spiritual growth
+            {!(premium || lifetime) && " • Free: Join 3 groups, Create 1"}
           </p>
         </div>
         
