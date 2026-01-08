@@ -71,7 +71,20 @@ export default function RootLayout({
       <body className="min-h-screen">
         <SplashScreen />
         {children}
-        <Toaster position="top-right" richColors />
+        <Toaster 
+          position="top-right" 
+          richColors 
+          expand={true}
+          duration={4000}
+          closeButton
+          toastOptions={{
+            style: {
+              padding: '16px',
+              gap: '12px',
+            },
+            className: 'toast-custom',
+          }}
+        />
         <PWAInstallPrompt />
         <ServiceWorkerRegister />
       </body>
