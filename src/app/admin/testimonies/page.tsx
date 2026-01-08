@@ -17,8 +17,8 @@ export default async function TestimoniesManagementPage() {
       title: testimonies.title,
       content: testimonies.content,
       category: testimonies.category,
-      approved: testimonies.approved,
-      featured: testimonies.featured,
+      isApproved: testimonies.isApproved,
+      isFeatured: testimonies.isFeatured,
       createdAt: testimonies.createdAt,
       userId: testimonies.userId,
       userName: user.name,
@@ -29,9 +29,9 @@ export default async function TestimoniesManagementPage() {
     .orderBy(desc(testimonies.createdAt));
 
   // Get stats
-  const pending = allTestimonies.filter(t => !t.approved);
-  const approved = allTestimonies.filter(t => t.approved);
-  const featured = allTestimonies.filter(t => t.featured);
+  const pending = allTestimonies.filter(t => !t.isApproved);
+  const approved = allTestimonies.filter(t => t.isApproved);
+  const featured = allTestimonies.filter(t => t.isFeatured);
 
   return (
     <div className="space-y-6">
@@ -96,7 +96,7 @@ export default async function TestimoniesManagementPage() {
                         <span className="text-sm text-gray-400">•</span>
                         <span className="text-sm text-gray-400 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {new Date(testimony.createdAt).toLocaleDateString()}
+                          {testimony.createdAt ? new Date(testimony.createdAt).toLocaleDateString() : 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -147,7 +147,7 @@ export default async function TestimoniesManagementPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-lg">{testimony.title}</h3>
-                      {testimony.featured && (
+                      {testimony.isFeatured && (
                         <Badge className="bg-purple-100 text-purple-800 flex items-center gap-1">
                           <Star className="w-3 h-3" />
                           Featured
@@ -161,7 +161,7 @@ export default async function TestimoniesManagementPage() {
                       <span className="text-sm text-gray-400">•</span>
                       <span className="text-sm text-gray-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {new Date(testimony.createdAt).toLocaleDateString()}
+                        {testimony.createdAt ? new Date(testimony.createdAt).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -173,7 +173,7 @@ export default async function TestimoniesManagementPage() {
                 </p>
 
                 <div className="flex items-center gap-2">
-                  {!testimony.featured ? (
+                  {!testimony.isFeatured ? (
                     <Button size="sm" variant="outline" className="flex items-center gap-2">
                       <Star className="w-4 h-4" />
                       Feature

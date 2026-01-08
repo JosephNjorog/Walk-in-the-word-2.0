@@ -43,7 +43,7 @@ async function getDashboardStats() {
   // Active reading plans
   const activePlans = await db.select({ count: sql<number>`count(*)` })
     .from(userReadingPlans)
-    .where(sql`${userReadingPlans.completed} = false`);
+    .where(sql`${userReadingPlans.completedAt} IS NULL`);
 
   return {
     totalUsers: totalUsers[0]?.count || 0,

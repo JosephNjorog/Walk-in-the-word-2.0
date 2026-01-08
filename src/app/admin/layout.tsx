@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth-client';
 import { db } from '@/lib/db';
 import { user } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
@@ -15,7 +15,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({
+    headers: await import('next/headers').then(m => m.headers()),
+  });
   
   if (!session?.user) {
     redirect('/login?redirect=/admin');
