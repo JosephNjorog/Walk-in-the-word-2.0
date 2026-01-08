@@ -16,8 +16,12 @@ export async function GET(request: NextRequest) {
         id: testimonies.id,
         title: testimonies.title,
         content: testimonies.content,
-        isAnonymous: testimonies.isAnonymous,
-        isApproved: testimonies.isApproved,
+        book: testimonies.book,
+        chapter: testimonies.chapter,
+        category: testimonies.category,
+        likeCount: testimonies.likeCount,
+        isPublic: testimonies.isPublic,
+        isFeatured: testimonies.isFeatured,
         createdAt: testimonies.createdAt,
         userId: user.id,
         userName: user.name,
@@ -25,7 +29,7 @@ export async function GET(request: NextRequest) {
       })
       .from(testimonies)
       .leftJoin(user, eq(testimonies.userId, user.id))
-      .where(eq(testimonies.isApproved, true))
+      .where(eq(testimonies.isPublic, true))
       .orderBy(desc(testimonies.createdAt))
       .limit(limit)
       .offset(offset);
@@ -51,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, isAnonymous } = body;
+    const { title, content, book, chapter, category } = body;
 
     if (!title?.trim() || !content?.trim()) {
       return NextResponse.json(
@@ -66,8 +70,10 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         title: title.trim(),
         content: content.trim(),
-        isAnonymous: isAnonymous || false,
-        isApproved: false,
+        book,
+        chapter,
+        category,
+        isPublic: true,
       })
       .returning();
 
