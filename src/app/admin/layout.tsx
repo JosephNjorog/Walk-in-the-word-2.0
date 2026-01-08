@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { authClient } from '@/lib/auth-client';
 import { db } from '@/lib/db';
-import { user } from '@/lib/schema';
+import { user, session } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { 
   LayoutDashboard, Users, BookOpen, MessageSquare, Award, 
   DollarSign, Bell, Settings, Shield, BarChart, FileText,
@@ -16,9 +16,31 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: Implement proper Better Auth server-side session check
-  // For now, allowing access for development/setup
-  // In production, add proper session validation here
+  // Check for Better Auth session
+  const cookieStore = cookies();
+  const sessionToken = cookieStore.get('better-auth.session_token')?.value;
+  
+  if (!sessionToken) {
+    redirect('/login?redirect=/admin');
+  }
+
+  // Get session from database
+  const userSession = await db.query.session.findFirst({
+    where: eq(session.token, sessionToken),
+  });
+
+  if (!userSession) {
+    redirect('/login?redirect=/admin');
+  }
+
+  // Check if user is admin
+  const userData = await db.query.user.findFirst({
+    where: eq(user.id, userSession.userId),
+  });
+
+  if (!userData || userData.role !== 'admin') {
+    redirect('/dashboard');
+  }
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', section: 'main' },
