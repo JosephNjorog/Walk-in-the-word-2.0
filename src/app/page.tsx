@@ -25,42 +25,42 @@ import {
 } from "lucide-react";
 
 const stats = [
-  { label: "Chapters Read", value: "Real-time", icon: BookOpen },
-  { label: "Active Readers", value: "Growing", icon: Users },
-  { label: "Reflections Shared", value: "Community", icon: MessageCircle },
-  { label: "Countries Reached", value: "Global", icon: Globe },
+  { label: "Bible Translations", value: "7+", icon: Globe },
+  { label: "Active Community", value: "Growing", icon: Users },
+  { label: "Self-Hosted", value: "Fast & Private", icon: BookOpen },
+  { label: "100% Free", value: "Forever", icon: Heart },
 ];
 
 const features = [
   {
-    icon: Calendar,
-    title: "Daily Reading Plan",
-    description: "Journey through the entire Bible from Genesis to Revelation with our beautifully designed reading plan.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Real-Time Reflections",
-    description: "Share your insights and thoughts as you read. See what others are discovering in the same chapters.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Progress Tracking",
-    description: "Watch your progress grow with satisfying animations, streaks, and milestone celebrations.",
+    icon: BookOpen,
+    title: "7+ Bible Translations",
+    description: "Access KJV, Spanish Reina-Valera, French Louis Segond, German, Chinese, Greek, and more - all self-hosted for instant access.",
   },
   {
     icon: Users,
-    title: "Partner Accountability",
-    description: "Connect with friends and family to stay accountable and encourage each other in the Word.",
+    title: "Small Groups & Forums",
+    description: "Create private study groups, join discussions, share testimonies, and connect with mentors in a thriving community.",
   },
   {
-    icon: Award,
-    title: "Achievements & Milestones",
-    description: "Earn badges and unlock achievements as you grow in your daily reading habit.",
+    icon: Calendar,
+    title: "Customizable Reading Plans",
+    description: "Follow structured plans or create your own. Track progress across multiple translations and stay consistent.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Memory Verse System",
+    description: "Master Scripture with spaced repetition. Our proven 6-level system helps you memorize and retain verses long-term.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Advanced Progress Tracking",
+    description: "Visualize your journey with streaks, milestones, XP levels, and beautiful analytics. Watch your faith grow daily.",
   },
   {
     icon: Sparkles,
-    title: "Beautiful Experience",
-    description: "Immerse yourself in Scripture with our distraction-free, serene reading interface.",
+    title: "SOAP Journaling",
+    description: "Deepen understanding with Scripture, Observation, Application, Prayer. Export your reflections anytime.",
   },
 ];
 
@@ -177,7 +177,7 @@ export default function LandingPage() {
               </h1>
               
               <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                A serene space for daily Scripture. Join thousands growing in faith through reading, reflection, and community accountability.
+                Experience Scripture in 7+ languages with our self-hosted Bible platform. Join a vibrant community with groups, forums, memory tools, and advanced study features—all completely free.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10">
