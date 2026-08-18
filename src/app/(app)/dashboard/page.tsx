@@ -1,49 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import {
-  BookOpen,
-  Bell,
-  Settings,
-  LogOut,
-  TrendingUp,
-  Users,
-  MessageCircle,
-  Award,
   ChevronRight,
-  Calendar,
   Flame,
   Heart,
-  Share2,
+  MessageCircle,
   MoreHorizontal,
-  Plus,
+  Share2,
   Loader2,
-  Crown,
-  Sparkles,
+  BookMarked,
   Brain,
   FileText,
-  BookMarked,
   Users2,
-  Sparkles as SparklesAlt,
+  Sparkles,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { BIBLE_BOOKS } from "@/lib/bible-utils";
 import { useSubscription } from "@/hooks/use-subscription";
-import { Badge } from "@/components/ui/badge";
+import { useTranslation, type Lang } from "@/lib/i18n/LanguageProvider";
 
 const dailyVerse = {
   text: "Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
@@ -56,9 +40,7 @@ function getNextChapter(progress: { book: string; chapter: number }[]): { book: 
   if (progress.length === 0) {
     return { book: "Genesis", chapter: 1 };
   }
-  
-  const completedSet = new Set(progress.map(p => `${p.book}-${p.chapter}`));
-  
+  const completedSet = new Set(progress.map((p) => `${p.book}-${p.chapter}`));
   for (const bookInfo of BIBLE_BOOKS) {
     for (let ch = 1; ch <= bookInfo.chapters; ch++) {
       if (!completedSet.has(`${bookInfo.name}-${ch}`)) {
@@ -66,35 +48,39 @@ function getNextChapter(progress: { book: string; chapter: number }[]): { book: 
       }
     }
   }
-  
   return { book: "Genesis", chapter: 1 };
 }
 
-function getReadingLevel(chaptersRead: number): string {
-  if (chaptersRead < 10) return "New Reader";
-  if (chaptersRead < 50) return "Growing Reader";
-  if (chaptersRead < 100) return "Devoted Reader";
-  if (chaptersRead < 500) return "Scripture Scholar";
-  return "Bible Master";
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffHours < 1) return "Just now";
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays === 1) return "Yesterday";
+  return `${diffDays} days ago`;
 }
 
-export default function DashboardPage() {
-  const { data: session, isPending } = authClient.useSession();
-  const router = useRouter();
-  const { premium, lifetime, loading: subLoading } = useSubscription();
-  const [progress, setProgress] = useState<{ book: string; chapter: number }[]>([]);
-  const [reflections, setReflections] = useState<{ id: string; book: string; chapter: number; content: string; createdAt: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const notifications = 0;
+const quickAccess = [
+  { href: "/plans", labelKey: "Reading Plans", icon: BookMarked, bg: "hsl(222 89% 94%)", fg: "hsl(222 89% 40%)" },
+  { href: "/memory-verses", labelKey: "Memory Verses", icon: Brain, bg: "hsl(258 90% 94%)", fg: "hsl(258 90% 55%)" },
+  { href: "/journal", labelKey: "SOAP Journal", icon: FileText, bg: "hsl(142 60% 92%)", fg: "hsl(142 60% 32%)" },
+  { href: "/community/forums", labelKey: "Forums", icon: MessageCircle, bg: "hsl(24 90% 92%)", fg: "hsl(24 90% 40%)" },
+  { href: "/community/groups", labelKey: "Small Groups", icon: Users2, bg: "hsl(330 80% 94%)", fg: "hsl(330 70% 45%)" },
+  { href: "/community/testimonies", labelKey: "Testimonies", icon: Sparkles, bg: "hsl(38 92% 92%)", fg: "hsl(38 92% 38%)" },
+];
 
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/login");
-    } else if (session?.user?.email === 'mwangijoenjoroge@gmail.com') {
-      // Direct check for admin email - redirect immediately
-      router.push('/admin');
-    }
-  }, [session, isPending, router]);
+export default function HomePage() {
+  const { data: session } = authClient.useSession();
+  const { premium, lifetime } = useSubscription();
+  const { t, lang, setLang } = useTranslation();
+  const [progress, setProgress] = useState<{ book: string; chapter: number }[]>([]);
+  const [reflections, setReflections] = useState<
+    { id: string; book: string; chapter: number; content: string; createdAt: string }[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -102,14 +88,12 @@ export default function DashboardPage() {
       try {
         const [progressRes, reflectionsRes] = await Promise.all([
           fetch("/api/progress"),
-          fetch("/api/reflections")
+          fetch("/api/reflections"),
         ]);
-        
         if (progressRes.ok) {
           const progressData = await progressRes.json();
           setProgress(Array.isArray(progressData) ? progressData : []);
         }
-        
         if (reflectionsRes.ok) {
           const reflectionsData = await reflectionsRes.json();
           setReflections(Array.isArray(reflectionsData) ? reflectionsData : []);
@@ -123,557 +107,261 @@ export default function DashboardPage() {
     fetchData();
   }, [session]);
 
-  const handleLogout = async () => {
-    await authClient.signOut();
-    router.push("/");
-  };
-
-  if (isPending || !session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (!session) return null;
 
   const user = session.user;
   const chaptersReadCount = progress.length;
-  const progressPercent = (chaptersReadCount / TOTAL_CHAPTERS) * 100;
   const currentStreak = (user as any).currentStreak || 0;
-  const level = getReadingLevel(chaptersReadCount);
   const nextChapter = getNextChapter(progress);
+  const readerHref = `/read/${encodeURIComponent(nextChapter.book.toLowerCase())}/${nextChapter.chapter}`;
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffHours < 1) return "Just now";
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    if (diffDays === 1) return "Yesterday";
-    return `${diffDays} days ago`;
-  };
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? t("home.greetingMorning") : hour < 18 ? t("home.greetingAfternoon") : t("home.greetingEvening");
+
+  const userInitials =
+    user.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 glass border-b">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold hidden sm:block" style={{ fontFamily: "var(--font-heading)" }}>
-                Walk in the Word
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-[10px] font-bold text-white flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 px-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.image || undefined} />
-                      <AvatarFallback>{user.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="hidden sm:flex items-center gap-2">
-                      <span className="font-medium">{user.name}</span>
-                      {lifetime && <Badge className="bg-yellow-500 text-white">Lifetime</Badge>}
-                      {premium && !lifetime && <Badge className="bg-primary">Premium</Badge>}
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer">
-                      <Award className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+    <div className="mx-auto max-w-3xl px-5 py-3 lg:max-w-none lg:px-10 lg:py-8">
+      {/* Mobile-only greeting header (desktop gets its title from the shared top bar) */}
+      <div className="mb-4 flex items-center justify-between lg:hidden">
+        <div>
+          <div className="text-[13px] text-muted-foreground">{greeting}</div>
+          <div style={{ fontFamily: "var(--font-heading)" }} className="text-[21px] font-bold text-foreground">
+            {user.name}
           </div>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-12 gap-8">
-          <aside className="lg:col-span-3 space-y-6">
-            <Card className="card-hover border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <Avatar className="h-20 w-20 mx-auto mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex rounded-full border border-border bg-card p-[3px]">
+            {(["en", "sw"] as const).map((code: Lang) => (
+              <button
+                key={code}
+                onClick={() => setLang(code)}
+                className="rounded-full px-2.5 py-[5px] text-[11px] font-bold"
+                style={{
+                  background: lang === code ? "hsl(var(--primary))" : "transparent",
+                  color: lang === code ? "#fff" : "hsl(var(--muted-foreground))",
+                }}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button>
+                <Avatar className="h-[38px] w-[38px]">
                   <AvatarImage src={user.image || undefined} />
-                  <AvatarFallback className="text-2xl">{user.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}</AvatarFallback>
+                  <AvatarFallback style={{ background: "hsl(258 90% 66%)", color: "#fff" }}>
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
-                <h2 className="text-xl font-bold mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                  {user.name}
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">{level}</p>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/profile">{t("nav.profile")}</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings">{t("common.settings")}</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
-                <div className="flex justify-center gap-6 mb-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-2xl font-bold text-secondary streak-fire">
-                      <Flame className="h-6 w-6" />
-                      {currentStreak}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Day Streak</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold gradient-text">
-                      {chaptersReadCount}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Chapters</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span className="font-medium">{progressPercent.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={progressPercent} className="h-2" />
-                  <p className="text-xs text-muted-foreground">
-                    {chaptersReadCount} of {TOTAL_CHAPTERS} chapters
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-4">
-                <nav className="space-y-1">
-                  {[
-                    { icon: BookOpen, label: "My Reflections", href: "/reflections" },
-                    { icon: TrendingUp, label: "Reading Plan", href: "/progress" },
-                    { icon: Award, label: "Achievements", href: "/profile" },
-                    { icon: Users, label: "Partnerships", href: "/partnerships" },
-                  ].map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <item.icon className="h-5 w-5 text-muted-foreground" />
-                      <span className="font-medium">{item.label}</span>
-                    </Link>
-                  ))}
-                </nav>
-              </CardContent>
-            </Card>
-
-            {/* Subscription Status Card */}
-            <Card className={`border-0 shadow-lg ${lifetime ? 'bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20' : premium ? 'bg-linear-to-br from-primary/5 to-accent/5' : ''}`}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      {lifetime ? (
-                        <>
-                          <Sparkles className="h-5 w-5 text-yellow-600" />
-                          <span className="font-bold text-yellow-700 dark:text-yellow-500">Lifetime Access</span>
-                        </>
-                      ) : premium ? (
-                        <>
-                          <Crown className="h-5 w-5 text-primary" />
-                          <span className="font-bold text-primary">Premium Member</span>
-                        </>
-                      ) : (
-                        <>
-                          <Heart className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-bold">Free Tier</span>
-                        </>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {lifetime ? 'All features unlocked forever' : premium ? 'All premium features active' : 'Upgrade for more features'}
-                    </p>
-                  </div>
-                  {!premium && !lifetime && (
-                    <Link href="/pricing">
-                      <Button size="sm">Upgrade</Button>
-                    </Link>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
-
-          <div className="lg:col-span-6 space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card className="card-hover border-0 shadow-lg overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-primary to-accent" />
-                <CardContent className="p-6">
-                  <p className="scripture-text text-lg italic mb-2">
-                    &ldquo;{dailyVerse.text}&rdquo;
-                  </p>
-                  <p className="text-sm text-muted-foreground">{dailyVerse.reference}</p>
-                  <Button variant="ghost" size="sm" className="mt-2 -ml-2">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Verse
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="card-hover border-0 shadow-xl overflow-hidden">
-                <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm opacity-90">Today&apos;s Reading</span>
-                    <span className="text-xs bg-white/20 px-3 py-1 rounded-full">
-                      Day {chaptersReadCount + 1}
-                    </span>
-                  </div>
-                  <h3 className="text-3xl font-bold mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                    {nextChapter.book} {nextChapter.chapter}
-                  </h3>
-                  <p className="text-sm opacity-90 mb-4">Continue your reading journey</p>
-                  <div className="flex items-center gap-4">
-                    <Link href={`/read/${encodeURIComponent(nextChapter.book.toLowerCase())}/${nextChapter.chapter}`}>
-                      <Button className="bg-white text-primary hover:bg-white/90">
-                        Start Reading
-                        <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <span className="text-sm opacity-75">~8 min read</span>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Quick Access Features */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="mb-4">
-                <h2 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-                  Quick Access
-                </h2>
-                <p className="text-sm text-muted-foreground">Jump to your favorite features</p>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {/* Reading Plans */}
-                <Link href="/plans">
-                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
-                    <CardContent className="p-6 text-center">
-                      <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
-                        <BookMarked className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Reading Plans</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {premium || lifetime ? "20+ Plans" : "5 Basic Plans"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Memory Verses */}
-                <Link href="/memory-verses">
-                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
-                    <CardContent className="p-6 text-center">
-                      <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-3">
-                        <Brain className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Memory Verses</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {premium || lifetime ? "Unlimited" : "10 Active"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Journal */}
-                <Link href="/journal">
-                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
-                    <CardContent className="p-6 text-center">
-                      <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
-                        <FileText className="h-6 w-6 text-green-600 dark:text-green-400" />
-                      </div>
-                      <h3 className="font-semibold mb-1">SOAP Journal</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {premium || lifetime ? "Unlimited" : "Unlimited"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Forums */}
-                <Link href="/community/forums">
-                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
-                    <CardContent className="p-6 text-center">
-                      <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-3">
-                        <MessageCircle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Forums</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {premium || lifetime ? "Unlimited Posts" : "10/Week"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Small Groups */}
-                <Link href="/community/groups">
-                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
-                    <CardContent className="p-6 text-center">
-                      <div className="h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center mx-auto mb-3">
-                        <Users2 className="h-6 w-6 text-pink-600 dark:text-pink-400" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Small Groups</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {premium || lifetime ? "Unlimited" : "Join 3"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Testimonies */}
-                <Link href="/community/testimonies">
-                  <Card className="card-hover border-0 shadow-lg cursor-pointer transition-transform hover:scale-105">
-                    <CardContent className="p-6 text-center">
-                      <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mx-auto mb-3">
-                        <SparklesAlt className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Testimonies</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {premium || lifetime ? "Unlimited" : "2/Week"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </div>
-            </motion.div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-                  My Reflections
-                </h2>
-                <Link href="/reflections">
-                  <Button variant="ghost" size="sm">
-                    View All
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : reflections.length === 0 ? (
-                <Card className="border-0 shadow-lg">
-                  <CardContent className="p-8 text-center">
-                    <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4">No reflections yet. Start reading and share your thoughts!</p>
-                    <Link href={`/read/${encodeURIComponent(nextChapter.book.toLowerCase())}/${nextChapter.chapter}`}>
-                      <Button className="btn-primary">Start Reading</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ) : (
-                reflections.slice(0, 3).map((reflection, index) => (
-                  <motion.div
-                    key={reflection.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + index * 0.1 }}
-                  >
-                    <Card className="card-hover border-0 shadow-lg">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={user.image || undefined} />
-                            <AvatarFallback>{user.name?.[0] || 'U'}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold">{user.name}</span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground">{formatDate(reflection.createdAt)}</span>
-                            </div>
-                            <Link 
-                              href={`/read/${encodeURIComponent(reflection.book.toLowerCase())}/${reflection.chapter}`}
-                              className="text-sm text-primary hover:underline mb-2 inline-block"
-                            >
-                              {reflection.book} {reflection.chapter}
-                            </Link>
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {reflection.content}
-                            </p>
-                            <div className="flex items-center gap-4">
-                              <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors">
-                                <Heart className="h-4 w-4" />
-                              </button>
-                              <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
-                                <Share2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))
-              )}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+        <div className="flex flex-1 flex-col gap-4">
+          {/* Streak banner / start-streak CTA */}
+          {chaptersReadCount === 0 ? (
+            <div className="rounded-[20px] border border-border bg-card px-[22px] py-[22px] text-center">
+              <div className="mb-1.5 text-[15px] font-bold text-foreground">{t("home.startStreakTitle")}</div>
+              <div className="mb-3.5 text-[13px] text-muted-foreground">{t("home.startStreakBody")}</div>
+              <Link
+                href="/plans"
+                className="inline-block rounded-xl bg-primary px-5 py-[11px] text-sm font-bold text-primary-foreground"
+              >
+                {t("home.browsePlans")}
+              </Link>
             </div>
+          ) : (
+            <Link
+              href="/streaks"
+              className="flex items-center gap-3.5 rounded-[20px] px-[18px] py-4 text-white"
+              style={{ background: "var(--blue-gradient)" }}
+            >
+              <Flame className="h-[30px] w-[30px] flex-shrink-0" style={{ color: "#F59E0B" }} fill="#F59E0B" />
+              <div className="flex-1">
+                <div className="text-[18px] font-extrabold">
+                  {currentStreak} {t("home.dayStreak")}
+                </div>
+                <div className="text-[12.5px] opacity-90">
+                  {t("home.chaptersOf", { total: TOTAL_CHAPTERS })}
+                </div>
+              </div>
+              <ChevronRight className="h-[18px] w-[18px] flex-shrink-0" />
+            </Link>
+          )}
+
+          {/* Verse of the day */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="rounded-[20px] border border-border bg-card px-5 py-5">
+              <div className="mb-2.5 flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-primary">
+                  {t("home.verseOfTheDay")}
+                </span>
+                <button className="text-muted-foreground">
+                  <Share2 className="h-4 w-4" />
+                </button>
+              </div>
+              <p
+                style={{ fontFamily: "var(--font-scripture)" }}
+                className="mb-2 text-[18px] italic leading-[1.55] text-foreground"
+              >
+                &ldquo;{dailyVerse.text}&rdquo;
+              </p>
+              <p className="text-[13px] font-semibold text-muted-foreground">{dailyVerse.reference}</p>
+            </div>
+          </motion.div>
+
+          {/* Continue reading */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <div className="rounded-[20px] border border-border bg-card px-5 py-5">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                {t("home.continueReading")}
+              </div>
+              <div style={{ fontFamily: "var(--font-heading)" }} className="mb-3.5 text-[19px] font-bold text-foreground">
+                {nextChapter.book} {nextChapter.chapter}
+              </div>
+              <Link
+                href={readerHref}
+                className="inline-block w-full rounded-2xl bg-primary py-[13px] text-center text-[15px] font-bold text-primary-foreground lg:w-auto lg:px-6"
+              >
+                {t("home.startReading")}
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Quick access */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {quickAccess.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex flex-col items-center gap-2 rounded-[16px] border border-border bg-card px-4 py-5 text-center"
+              >
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-full"
+                  style={{ background: item.bg }}
+                >
+                  <item.icon className="h-5 w-5" style={{ color: item.fg }} />
+                </div>
+                <span className="text-[13px] font-semibold text-foreground">{item.labelKey}</span>
+              </Link>
+            ))}
           </div>
 
-          <aside className="lg:col-span-3 space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <span>Reading Progress</span>
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="relative">
-                  <svg className="w-32 h-32 mx-auto" viewBox="0 0 100 100">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      fill="none"
-                      stroke="hsl(var(--muted))"
-                      strokeWidth="8"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      fill="none"
-                      stroke="url(#gradient)"
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      strokeDasharray={`${progressPercent * 2.51} 251`}
-                      transform="rotate(-90 50 50)"
-                      className="progress-ring"
-                    />
-                    <defs>
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" />
-                        <stop offset="100%" stopColor="hsl(var(--accent))" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-bold">{chaptersReadCount}</span>
-                    <span className="text-xs text-muted-foreground">chapters</span>
-                  </div>
-                </div>
+          {/* Reflections feed */}
+          <div className="mt-1 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 style={{ fontFamily: "var(--font-heading)" }} className="text-lg font-bold text-foreground">
+                My Reflections
+              </h2>
+              <Link href="/reflections" className="flex items-center text-sm text-muted-foreground">
+                View All
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </div>
 
-                <div className="grid grid-cols-7 gap-1">
-                  {[...Array(28)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-4 rounded-sm ${
-                        i < currentStreak % 28
-                          ? "bg-green-500"
-                          : "bg-muted"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-center text-muted-foreground">
-                  Current Streak: {currentStreak} days
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
+              </div>
+            ) : reflections.length === 0 ? (
+              <div className="rounded-[16px] border border-border bg-card px-6 py-8 text-center">
+                <MessageCircle className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+                <p className="mb-3 text-sm text-muted-foreground">
+                  No reflections yet. Start reading and share your thoughts!
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <span>Reading Partners</span>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Invite friends to read with you!
-                </p>
-                <Link href="/partnerships">
-                  <Button variant="outline" className="w-full" size="sm">
-                    <Users className="mr-2 h-4 w-4" />
-                    Invite Partner
-                  </Button>
+                <Link href={readerHref} className="text-sm font-bold text-primary">
+                  Start Reading
                 </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-secondary/10 to-secondary/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <Award className="h-8 w-8 text-secondary" />
-                  <div>
-                    <p className="font-semibold">Next Milestone</p>
-                    <p className="text-sm text-muted-foreground">
-                      {chaptersReadCount < 50 
-                        ? `${50 - chaptersReadCount} chapters to Devoted Reader!`
-                        : chaptersReadCount < 100
-                        ? `${100 - chaptersReadCount} chapters to Scripture Scholar!`
-                        : "Keep growing in the Word!"}
-                    </p>
+              </div>
+            ) : (
+              reflections.slice(0, 3).map((reflection, index) => (
+                <motion.div
+                  key={reflection.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                >
+                  <div className="rounded-[16px] border border-border bg-card p-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.image || undefined} />
+                        <AvatarFallback>{userInitials}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground">{user.name}</span>
+                          <span className="text-xs text-muted-foreground">·</span>
+                          <span className="text-xs text-muted-foreground">{formatDate(reflection.createdAt)}</span>
+                        </div>
+                        <Link
+                          href={`/read/${encodeURIComponent(reflection.book.toLowerCase())}/${reflection.chapter}`}
+                          className="mb-2 inline-block text-sm text-primary hover:underline"
+                        >
+                          {reflection.book} {reflection.chapter}
+                        </Link>
+                        <p className="mb-3 text-sm text-muted-foreground">{reflection.content}</p>
+                        <div className="flex items-center gap-4">
+                          <button className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Heart className="h-4 w-4" />
+                          </button>
+                          <button className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Share2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <button className="text-muted-foreground">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Progress</span>
-                    <span>{chaptersReadCount}/{chaptersReadCount < 50 ? 50 : chaptersReadCount < 100 ? 100 : 500}</span>
-                  </div>
-                  <Progress 
-                    value={(chaptersReadCount / (chaptersReadCount < 50 ? 50 : chaptersReadCount < 100 ? 100 : 500)) * 100} 
-                    className="h-2" 
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
+                </motion.div>
+              ))
+            )}
+          </div>
         </div>
-      </main>
+
+        {/* Desktop side card */}
+        <div className="hidden w-[280px] flex-shrink-0 lg:block">
+          <Link
+            href="/streaks"
+            className="block rounded-[20px] px-5 py-5 text-white"
+            style={{ background: "var(--blue-gradient)" }}
+          >
+            <div className="text-[22px] font-extrabold">
+              {currentStreak} {t("home.dayStreak")}
+            </div>
+            <div className="mt-1 text-xs opacity-90">{t("home.chaptersOf", { total: TOTAL_CHAPTERS })}</div>
+          </Link>
+          {!premium && !lifetime && (
+            <Link
+              href="/pricing"
+              className="mt-4 block rounded-[16px] border border-border bg-card px-4 py-4 text-center text-sm font-bold text-primary"
+            >
+              Upgrade for more features
+            </Link>
+          )}
+          {lifetime && (
+            <div className="mt-4 rounded-[16px] border border-border bg-card px-4 py-4 text-center text-sm font-bold text-secondary">
+              Lifetime Access
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
