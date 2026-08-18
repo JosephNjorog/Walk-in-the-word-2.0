@@ -1,116 +1,73 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { 
-  Users, 
-  Calendar, 
-  Lock, 
-  Globe, 
-  Send, 
-  ArrowLeft, 
-  Settings,
-  UserPlus,
-  LogOut,
-  Shield,
-  Crown
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Info, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { authClient } from "@/lib/auth-client";
 
 interface GroupData {
   id: string;
   name: string;
-  description: string;
-  type: string;
   privacy: string;
-  maxMembers: number;
   memberCount: number;
-  imageUrl?: string;
-  meetingSchedule?: string;
-  leaderId: string;
-  leaderName: string;
-  leaderEmail: string;
-  leaderImage: string;
   isMember: boolean;
-  userRole: string | null;
-  createdAt: string;
-}
-
-interface Member {
-  id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  userImage: string;
-  role: string;
-  joinedAt: string;
 }
 
 interface Message {
   id: string;
   content: string;
-  type: string;
   createdAt: string;
   userId: string;
   userName: string;
-  userEmail: string;
-  userImage: string;
+  userImage: string | null;
+}
+
+const AVATAR_COLORS = ["hsl(222 89% 40%)", "hsl(258 90% 66%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(142 60% 42%)"];
+function colorFor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function initialsFor(name: string) {
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
   const groupId = params.id as string;
-  
+  const { data: session } = authClient.useSession();
+
   const [group, setGroup] = useState<GroupData | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messageText, setMessageText] = useState("");
+  const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
+  const [joining, setJoining] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (groupId) {
-      fetchGroupData();
-      fetchMessages();
-      // Poll for new messages every 5 seconds
-      const interval = setInterval(fetchMessages, 5000);
-      return () => clearInterval(interval);
-    }
+    if (!groupId) return;
+    fetchGroup();
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000);
+    return () => clearInterval(interval);
   }, [groupId]);
 
   useEffect(() => {
-    scrollToBottom();
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const fetchGroupData = async () => {
+  const fetchGroup = async () => {
     try {
-      const response = await fetch(`/api/groups/${groupId}`);
-      if (!response.ok) throw new Error("Failed to fetch group");
-      const data = await response.json();
+      const res = await fetch(`/api/groups/${groupId}`);
+      if (!res.ok) return;
+      const data = await res.json();
       setGroup(data.group);
-      setMembers(data.members);
-    } catch (error) {
-      toast.error("Failed to load group");
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -118,328 +75,164 @@ export default function GroupDetailPage() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`/api/groups/${groupId}/messages?limit=100`);
-      if (!response.ok) return; // Silently fail if not a member
-      const data = await response.json();
+      const res = await fetch(`/api/groups/${groupId}/messages?limit=100`);
+      if (!res.ok) return;
+      const data = await res.json();
       setMessages(data.messages || []);
-    } catch (error) {
-      // Silently handle errors for polling
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || sending) return;
-
+    if (!draft.trim() || sending) return;
+    const content = draft;
+    setDraft("");
     setSending(true);
-    const tempMessage = messageText;
-    setMessageText("");
-
     try {
-      const response = await fetch(`/api/groups/${groupId}/messages`, {
+      const res = await fetch(`/api/groups/${groupId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: tempMessage }),
+        body: JSON.stringify({ content }),
       });
-
-      if (!response.ok) throw new Error("Failed to send message");
-      
-      // Fetch messages immediately after sending
+      if (!res.ok) throw new Error();
       fetchMessages();
-      messageInputRef.current?.focus();
-    } catch (error) {
+    } catch (err) {
       toast.error("Failed to send message");
-      setMessageText(tempMessage); // Restore message on error
-      console.error(error);
+      setDraft(content);
     } finally {
       setSending(false);
     }
   };
 
-  const handleLeaveGroup = async () => {
+  const handleJoin = async () => {
+    setJoining(true);
     try {
-      const response = await fetch(`/api/groups?groupId=${groupId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Failed to leave group");
-      
-      toast.success("Left group successfully");
-      router.push("/community/groups");
-    } catch (error) {
-      toast.error("Failed to leave group");
-      console.error(error);
+      const res = await fetch(`/api/groups/${groupId}/join`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      toast.success("Joined group!");
+      fetchGroup();
+      fetchMessages();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to join group");
+    } finally {
+      setJoining(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!group) {
     return (
-      <div className="container mx-auto p-6">
-        <Card className="p-12">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">Group Not Found</h3>
-            <p className="text-muted-foreground mb-4">
-              This group doesn't exist or you don't have access to it.
-            </p>
-            <Button onClick={() => router.push("/community/groups")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Groups
-            </Button>
-          </div>
-        </Card>
+      <div className="mx-auto max-w-3xl px-4 py-10 text-center">
+        <p className="mb-4 text-sm text-muted-foreground">This group doesn't exist or you don't have access to it.</p>
+        <button onClick={() => router.push("/community/groups")} className="text-sm font-bold text-primary">
+          Back to Groups
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/community/groups")}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold">{group.name}</h1>
-            {group.privacy === "private" ? (
-              <Lock className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <Globe className="h-5 w-5 text-muted-foreground" />
-            )}
-            <Badge>{group.type.replace("_", " ")}</Badge>
+    <div className="mx-auto flex h-[calc(100vh-60px)] max-w-3xl flex-col lg:h-[calc(100vh-60px)]">
+      <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border px-4 py-3">
+        <Link href="/community/groups" className="p-1">
+          <ArrowLeft className="h-[22px] w-[22px] text-foreground" />
+        </Link>
+        <Link href={`/community/groups/${groupId}/info`} className="flex flex-1 items-center gap-2.5 overflow-hidden">
+          <div
+            className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-xl text-[13px] font-bold text-white"
+            style={{ background: colorFor(group.id) }}
+          >
+            {initialsFor(group.name)}
           </div>
-          <p className="text-muted-foreground">{group.description}</p>
-        </div>
-        
-        {group.isMember && (
-          <Button variant="outline" size="icon" onClick={() => setLeaveDialogOpen(true)}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        )}
+          <div className="min-w-0">
+            <div className="truncate text-[14.5px] font-bold text-foreground">{group.name}</div>
+            <div className="text-[11.5px] text-muted-foreground">{group.memberCount} members</div>
+          </div>
+        </Link>
+        <Link href={`/community/groups/${groupId}/info`} className="flex-shrink-0 p-1 text-muted-foreground">
+          <Info className="h-5 w-5" />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="chat" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="about">About</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="chat" className="mt-4">
-              {!group.isMember ? (
-                <Card className="p-12">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold mb-2">Join to Participate</h3>
-                    <p className="text-muted-foreground mb-4">
-                      You need to be a member of this group to view and send messages.
-                    </p>
-                    <Button>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Request to Join
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <Card className="flex flex-col h-[600px]">
-                  {/* Messages Area */}
-                  <ScrollArea className="flex-1 p-4">
-                    {messages.length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center text-muted-foreground">
-                          <p>No messages yet.</p>
-                          <p className="text-sm">Be the first to say something!</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {messages.map((message) => (
-                          <div key={message.id} className="flex gap-3">
-                            <Avatar className="h-8 w-8 mt-1">
-                              <AvatarImage src={message.userImage} />
-                              <AvatarFallback>{message.userName?.[0] || "U"}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-baseline gap-2 mb-1">
-                                <span className="font-semibold text-sm">{message.userName}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                                </span>
-                              </div>
-                              <p className="text-sm wrap-break-word">{message.content}</p>
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </div>
-                    )}
-                  </ScrollArea>
-
-                  {/* Message Input */}
-                  <div className="border-t p-4">
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                      <Input
-                        ref={messageInputRef}
-                        placeholder="Type a message..."
-                        value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
-                        disabled={sending}
-                        className="flex-1"
-                      />
-                      <Button type="submit" size="icon" disabled={sending || !messageText.trim()}>
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </form>
-                  </div>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="about" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Group Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">Description</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {group.description || "No description provided"}
-                    </p>
-                  </div>
-
-                  {group.meetingSchedule && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Meeting Schedule</h4>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>{group.meetingSchedule}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">Group Leader</h4>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={group.leaderImage} />
-                        <AvatarFallback>{group.leaderName?.[0] || "L"}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{group.leaderName}</p>
-                        <p className="text-xs text-muted-foreground">{group.leaderEmail}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Privacy:</span>
-                      <p className="font-medium capitalize">{group.privacy}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Type:</span>
-                      <p className="font-medium capitalize">{group.type.replace("_", " ")}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Members:</span>
-                      <p className="font-medium">{group.memberCount} / {group.maxMembers}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Created:</span>
-                      <p className="font-medium">
-                        {formatDistanceToNow(new Date(group.createdAt), { addSuffix: true })}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+      {!group.isMember ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <p className="text-[15px] font-bold text-foreground">Join to participate</p>
+          <p className="max-w-xs text-[13px] text-muted-foreground">
+            {group.privacy === "public"
+              ? "You need to be a member of this group to view and send messages."
+              : "This is a private group — ask the leader to invite you."}
+          </p>
+          {group.privacy === "public" && (
+            <button
+              onClick={handleJoin}
+              disabled={joining}
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+            >
+              {joining ? "Joining…" : "Join Group"}
+            </button>
+          )}
         </div>
-
-        {/* Sidebar - Members */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Members ({members.length})
-              </CardTitle>
-              <CardDescription>
-                {group.maxMembers - group.memberCount} spots remaining
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {members.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={member.userImage} />
-                        <AvatarFallback>{member.userName?.[0] || "U"}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">{member.userName}</p>
-                          {member.role === "leader" && (
-                            <Crown className="h-3 w-3 text-yellow-500" />
-                          )}
-                          {member.role === "moderator" && (
-                            <Shield className="h-3 w-3 text-blue-500" />
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Joined {formatDistanceToNow(new Date(member.joinedAt), { addSuffix: true })}
-                        </p>
-                      </div>
+      ) : (
+        <>
+          <div className="flex-1 space-y-1 overflow-y-auto bg-[hsl(45,60%,98%)] px-4 py-3.5">
+            {messages.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
+                No messages yet. Be the first to say something!
+              </div>
+            ) : (
+              messages.map((m, i) => {
+                const isMine = m.userId === session?.user?.id;
+                const showAuthor = !isMine && (i === 0 || messages[i - 1].userId !== m.userId);
+                return (
+                  <div key={m.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"} max-w-[82%] ${isMine ? "ml-auto" : ""} mb-1.5`}>
+                    {showAuthor && <span className="mb-0.5 ml-1 text-[11.5px] font-bold text-primary">{m.userName}</span>}
+                    <div
+                      className="rounded-2xl px-3.5 py-2.5 text-[14.5px] leading-snug"
+                      style={{
+                        background: isMine ? "hsl(var(--primary))" : "#fff",
+                        color: isMine ? "#fff" : "hsl(var(--foreground))",
+                        boxShadow: isMine ? undefined : "0 1px 2px rgba(0,0,0,.05)",
+                      }}
+                    >
+                      {m.content}
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={bottomRef} />
+          </div>
 
-      {/* Leave Group Dialog */}
-      <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Leave Group</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to leave "{group.name}"? You'll need to request to rejoin.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLeaveDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleLeaveGroup}>
-              Leave Group
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <form onSubmit={handleSend} className="flex flex-shrink-0 items-center gap-2 border-t border-border bg-card px-3.5 py-2.5">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Message"
+              disabled={sending}
+              className="flex-1 rounded-full bg-muted px-4 py-2.5 text-sm outline-none"
+            />
+            <button
+              type="submit"
+              disabled={sending || !draft.trim()}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
 }

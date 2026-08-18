@@ -1,369 +1,105 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSubscription } from "@/hooks/use-subscription";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Plus, Lock, Globe, Calendar, Search, Filter } from "lucide-react";
-import { toast } from "sonner";
+import Link from "next/link";
+import { Plus, Loader2 } from "lucide-react";
+import { formatDistanceToNowStrict } from "date-fns";
 
-interface Group {
+interface GroupSummary {
   id: string;
   name: string;
-  description: string;
-  type: string;
-  privacy: string;
-  maxMembers: number;
   memberCount: number;
-  leaderName: string;
-  leaderImage: string;
-  imageUrl?: string;
-  meetingSchedule?: string;
-  createdAt: string;
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+}
+
+const AVATAR_COLORS = ["hsl(222 89% 40%)", "hsl(258 90% 66%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(142 60% 42%)"];
+
+function colorFor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function initialsFor(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export default function GroupsPage() {
-  const router = useRouter();
-  const { premium, lifetime } = useSubscription();
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [myGroupsCount, setMyGroupsCount] = useState(0);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    type: "small_group",
-    privacy: "private",
-    maxMembers: 12,
-    meetingSchedule: "",
-  });
 
   useEffect(() => {
-    fetchGroups();
+    fetch("/api/groups")
+      .then((res) => res.json())
+      .then((data) => setGroups(data.groups || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchGroups = async () => {
-    try {
-      const response = await fetch("/api/groups");
-      if (!response.ok) throw new Error("Failed to fetch groups");
-      const data = await response.json();
-      setGroups(data.groups || []);
-    } catch (error) {
-      toast.error("Failed to load groups");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateGroup = async () => {
-    if (!formData.name.trim()) {
-      toast.error("Please enter a group name");
-      return;
-    }
-
-    setCreating(true);
-    try {
-      const response = await fetch("/api/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error("Failed to create group");
-      
-      const data = await response.json();
-      toast.success("Group created successfully!");
-      setCreateDialogOpen(false);
-      setFormData({
-        name: "",
-        description: "",
-        type: "small_group",
-        privacy: "private",
-        maxMembers: 12,
-        meetingSchedule: "",
-      });
-      fetchGroups();
-    } catch (error) {
-      toast.error("Failed to create group");
-      console.error(error);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const filteredGroups = groups.filter((group) => {
-    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         group.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterType === "all" || group.type === filterType;
-    return matchesSearch && matchesFilter;
-  });
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">Small Groups</h1>
-            {(premium || lifetime) ? (
-              <Badge className="bg-primary">Unlimited Groups</Badge>
-            ) : (
-              <Badge variant="outline">Create 1 Group</Badge>
-            )}
-          </div>
-          <p className="text-muted-foreground">
-            Join a community of believers for Bible study, fellowship, and spiritual growth
-            {!(premium || lifetime) && " • Free: Join 3 groups, Create 1"}
-          </p>
-        </div>
-        
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Group
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Create a New Group</DialogTitle>
-              <DialogDescription>
-                Start a small group for Bible study, prayer, or fellowship
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Group Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Wednesday Bible Study"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="What's your group about?"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Group Type</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value })}
-                  >
-                    <SelectTrigger id="type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="small_group">Small Group</SelectItem>
-                      <SelectItem value="bible_study">Bible Study</SelectItem>
-                      <SelectItem value="prayer_group">Prayer Group</SelectItem>
-                      <SelectItem value="accountability">Accountability</SelectItem>
-                      <SelectItem value="youth">Youth Group</SelectItem>
-                      <SelectItem value="mens">Men's Group</SelectItem>
-                      <SelectItem value="womens">Women's Group</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="privacy">Privacy</Label>
-                  <Select
-                    value={formData.privacy}
-                    onValueChange={(value) => setFormData({ ...formData, privacy: value })}
-                  >
-                    <SelectTrigger id="privacy">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="private">Private</SelectItem>
-                      <SelectItem value="public">Public</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="maxMembers">Max Members</Label>
-                <Input
-                  id="maxMembers"
-                  type="number"
-                  min="2"
-                  max="100"
-                  value={formData.maxMembers}
-                  onChange={(e) => setFormData({ ...formData, maxMembers: parseInt(e.target.value) })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="schedule">Meeting Schedule (Optional)</Label>
-                <Input
-                  id="schedule"
-                  placeholder="e.g., Wednesdays 7 PM EST"
-                  value={formData.meetingSchedule}
-                  onChange={(e) => setFormData({ ...formData, meetingSchedule: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateGroup} disabled={creating}>
-                {creating ? "Creating..." : "Create Group"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:px-10 lg:py-8">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 style={{ fontFamily: "var(--font-heading)" }} className="text-[22px] font-bold text-foreground">
+          Groups
+        </h1>
+        <Link
+          href="/community/groups/discover"
+          className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-primary text-primary-foreground"
+          aria-label="Discover groups"
+        >
+          <Plus className="h-4 w-4" />
+        </Link>
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search groups..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </div>
-        
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="small_group">Small Group</SelectItem>
-            <SelectItem value="bible_study">Bible Study</SelectItem>
-            <SelectItem value="prayer_group">Prayer Group</SelectItem>
-            <SelectItem value="accountability">Accountability</SelectItem>
-            <SelectItem value="youth">Youth Group</SelectItem>
-            <SelectItem value="mens">Men's Group</SelectItem>
-            <SelectItem value="womens">Women's Group</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Groups Grid */}
-      {filteredGroups.length === 0 ? (
-        <Card className="p-12">
-          <div className="text-center">
-            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Groups Found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || filterType !== "all" 
-                ? "Try adjusting your search or filters" 
-                : "You haven't joined any groups yet. Create one to get started!"}
-            </p>
-            {!searchQuery && filterType === "all" && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Group
-              </Button>
-            )}
-          </div>
-        </Card>
+      ) : groups.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-[20px] border border-border bg-card px-6 py-14 text-center">
+          <p className="text-[15px] font-bold text-foreground">No groups yet</p>
+          <p className="max-w-xs text-[13px] text-muted-foreground">Join a cell group or fellowship to start chatting.</p>
+          <Link
+            href="/community/groups/discover"
+            className="mt-1 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+          >
+            Find a Group
+          </Link>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroups.map((group) => (
-            <Card 
-              key={group.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => router.push(`/community/groups/${group.id}`)}
+        <div className="flex flex-col gap-2.5">
+          {groups.map((g) => (
+            <Link
+              key={g.id}
+              href={`/community/groups/${g.id}`}
+              className="flex items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-3"
             >
-              <CardHeader>
-                <div className="flex items-start justify-between mb-2">
-                  <Badge variant={group.type === "small_group" ? "default" : "secondary"}>
-                    {group.type.replace("_", " ")}
-                  </Badge>
-                  {group.privacy === "private" ? (
-                    <Lock className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-                <CardTitle className="line-clamp-1">{group.name}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {group.description || "No description provided"}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={group.leaderImage} />
-                      <AvatarFallback>{group.leaderName?.[0] || "L"}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-muted-foreground">
-                      Led by {group.leaderName || "Unknown"}
+              <div
+                className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white"
+                style={{ background: colorFor(g.id) }}
+              >
+                {initialsFor(g.name)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-[14.5px] font-bold text-foreground">{g.name}</span>
+                  {g.lastMessageAt && (
+                    <span className="flex-shrink-0 text-[11px] text-muted-foreground">
+                      {formatDistanceToNowStrict(new Date(g.lastMessageAt))}
                     </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>{group.memberCount} / {group.maxMembers} members</span>
-                  </div>
-
-                  {group.meetingSchedule && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span className="line-clamp-1">{group.meetingSchedule}</span>
-                    </div>
                   )}
                 </div>
-              </CardContent>
-              
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/community/groups/${group.id}`);
-                  }}
-                >
-                  View Group
-                </Button>
-              </CardFooter>
-            </Card>
+                <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                  {g.lastMessage || `${g.memberCount} member${g.memberCount !== 1 ? "s" : ""}`}
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       )}
