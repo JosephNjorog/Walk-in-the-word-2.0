@@ -8,12 +8,18 @@ export interface BibleVersion {
   abbreviation: string;
 }
 
+export interface ChapterVerse {
+  verse: number;
+  text: string;
+}
+
 export interface BibleChapter {
   id: string;
   bibleId: string;
   number: string;
   bookId: string;
   content: string;
+  verses: ChapterVerse[];
   reference: string;
   next?: { id: string; number: string };
   previous?: { id: string; number: string };
@@ -99,10 +105,15 @@ async function getLocalChapterContent(version: string, bookName: string, chapter
 
     if (!verses || verses.length === 0) return null;
 
-    // Format as HTML
-    const content = verses.map(v => 
+    // Defensively dedupe by verse number in case of duplicate rows in the source data
+    const seen = new Set<number>();
+    const dedupedVerses = verses.filter(v => (seen.has(v.verse) ? false : (seen.add(v.verse), true)));
+
+    // Format as HTML (legacy consumers) and as a structured array (per-verse rendering)
+    const content = dedupedVerses.map(v =>
       `<p class="p"><span class="verse-num" data-number="${v.verse}">${v.verse} </span>${v.text}</p>`
     ).join('\n');
+    const verseList: ChapterVerse[] = dedupedVerses.map(v => ({ verse: v.verse, text: v.text }));
 
     // Determine next and previous chapters
     const hasNext = chapterNum < book.chapters;
@@ -114,6 +125,7 @@ async function getLocalChapterContent(version: string, bookName: string, chapter
       number: chapterNum.toString(),
       bookId: book.abbreviation,
       content,
+      verses: verseList,
       reference: `${bookName} ${chapterNum}`,
       next: hasNext ? { id: `${book.abbreviation}.${chapterNum + 1}`, number: (chapterNum + 1).toString() } : undefined,
       previous: hasPrev ? { id: `${book.abbreviation}.${chapterNum - 1}`, number: (chapterNum - 1).toString() } : undefined,
@@ -307,29 +319,35 @@ export async function searchBible(query: string, version: string = 'KJV', limit:
   }
 }
 
+const FALLBACK_GENESIS_1_VERSES: ChapterVerse[] = [
+  { verse: 1, text: "In the beginning God created the heaven and the earth." },
+  { verse: 2, text: "And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters." },
+  { verse: 3, text: "And God said, Let there be light: and there was light." },
+  { verse: 4, text: "And God saw the light, that it was good: and God divided the light from the darkness." },
+  { verse: 5, text: "And God called the light Day, and the darkness he called Night. And the evening and the morning were the first day." },
+  { verse: 6, text: "And God said, Let there be a firmament in the midst of the waters, and let it divide the waters from the waters." },
+  { verse: 7, text: "And God made the firmament, and divided the waters which were under the firmament from the waters which were above the firmament: and it was so." },
+  { verse: 8, text: "And God called the firmament Heaven. And the evening and the morning were the second day." },
+  { verse: 9, text: "And God said, Let the waters under the heaven be gathered together unto one place, and let the dry land appear: and it was so." },
+  { verse: 10, text: "And God called the dry land Earth; and the gathering together of the waters called he Seas: and God saw that it was good." },
+];
+
 function getFallbackChapter(bibleId: string, chapterId: string): BibleChapter {
   const [bookId, chapterNum] = chapterId.split(".");
   const reference = `${getBookName(bookId)} ${chapterNum}`;
-  
+  const verses = FALLBACK_GENESIS_1_VERSES;
+  const content = verses.map(v =>
+    `<p class="p"><span class="verse-num" data-number="${v.verse}">${v.verse} </span>${v.text}</p>`
+  ).join('\n') + '\n<p class="mt">Note: This is sample content. The full Bible text has not been imported for this translation yet.</p>';
+
   return {
     id: chapterId,
     bibleId,
     number: chapterNum,
     bookId,
     reference,
-    content: `
-      <p class="p"><span class="verse-num" data-number="1">1 </span>In the beginning God created the heaven and the earth.</p>
-      <p class="p"><span class="verse-num" data-number="2">2 </span>And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters.</p>
-      <p class="p"><span class="verse-num" data-number="3">3 </span>And God said, Let there be light: and there was light.</p>
-      <p class="p"><span class="verse-num" data-number="4">4 </span>And God saw the light, that it was good: and God divided the light from the darkness.</p>
-      <p class="p"><span class="verse-num" data-number="5">5 </span>And God called the light Day, and the darkness he called Night. And the evening and the morning were the first day.</p>
-      <p class="p"><span class="verse-num" data-number="6">6 </span>And God said, Let there be a firmament in the midst of the waters, and let it divide the waters from the waters.</p>
-      <p class="p"><span class="verse-num" data-number="7">7 </span>And God made the firmament, and divided the waters which were under the firmament from the waters which were above the firmament: and it was so.</p>
-      <p class="p"><span class="verse-num" data-number="8">8 </span>And God called the firmament Heaven. And the evening and the morning were the second day.</p>
-      <p class="p"><span class="verse-num" data-number="9">9 </span>And God said, Let the waters under the heaven be gathered together unto one place, and let the dry land appear: and it was so.</p>
-      <p class="p"><span class="verse-num" data-number="10">10 </span>And God called the dry land Earth; and the gathering together of the waters called he Seas: and God saw that it was good.</p>
-      <p class="mt">Note: This is sample content. To access the full Bible, please configure a valid Bible API key.</p>
-    `,
+    content,
+    verses,
   };
 }
 
