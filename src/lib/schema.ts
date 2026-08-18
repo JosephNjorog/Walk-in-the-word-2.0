@@ -455,11 +455,22 @@ export const churches = pgTable('churches', {
   name: varchar('name', { length: 200 }).notNull(),
   denomination: varchar('denomination', { length: 100 }),
   location: text('location'),
+  description: text('description'),
   website: text('website'),
   adminId: text('admin_id').references(() => user.id),
   logoUrl: text('logo_url'),
   isVerified: boolean('is_verified').default(false),
   memberCount: integer('member_count').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const churchAnnouncements = pgTable('church_announcements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  churchId: uuid('church_id').references(() => churches.id, { onDelete: 'cascade' }),
+  authorId: text('author_id').references(() => user.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 200 }).notNull(),
+  body: text('body').notNull(),
+  isPinned: boolean('is_pinned').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -863,6 +874,18 @@ export const churchesRelations = relations(churches, ({ one, many }) => ({
   }),
   members: many(churchMembers),
   sermons: many(sermons),
+  announcements: many(churchAnnouncements),
+}));
+
+export const churchAnnouncementsRelations = relations(churchAnnouncements, ({ one }) => ({
+  church: one(churches, {
+    fields: [churchAnnouncements.churchId],
+    references: [churches.id],
+  }),
+  author: one(user, {
+    fields: [churchAnnouncements.authorId],
+    references: [user.id],
+  }),
 }));
 
 export const sermonsRelations = relations(sermons, ({ one }) => ({
