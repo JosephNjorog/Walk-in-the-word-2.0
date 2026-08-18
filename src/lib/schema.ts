@@ -245,6 +245,7 @@ export const groupMembers = pgTable('group_members', {
   groupId: uuid('group_id').references(() => groups.id, { onDelete: 'cascade' }),
   userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
   role: varchar('role', { length: 20 }).default('member'), // leader, admin, member
+  muted: boolean('muted').default(false),
   joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
   unq: unique().on(t.groupId, t.userId),

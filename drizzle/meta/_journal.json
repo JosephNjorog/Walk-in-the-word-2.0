@@ -8,6 +8,13 @@
       "when": 1767873722479,
       "tag": "0000_tricky_random",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787051087369,
+      "tag": "0001_rare_exodus",
+      "breakpoints": true
     }
   ]
 }
