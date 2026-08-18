@@ -23,6 +23,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       router.push("/login");
     } else if (session?.user?.email === SUPER_ADMIN_EMAIL) {
       router.push("/admin");
+    } else if (session?.user && (session.user as any).hasOnboarded === false) {
+      router.push("/onboarding");
     }
   }, [session, isPending, router]);
 

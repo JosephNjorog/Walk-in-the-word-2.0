@@ -89,14 +89,14 @@ export default function RegisterPage() {
         username: finalUsername,
         //@ts-ignore - custom fields
         readingPace: parseInt(formData.readingPace),
-        callbackURL: "/dashboard",
+        callbackURL: "/onboarding",
       });
 
       if (error) {
         toast.error(error.message || "Failed to create account");
       } else {
         toast.success("Account created successfully!");
-        window.location.href = "/dashboard";
+        window.location.href = "/onboarding";
       }
     } catch (err) {
       console.error(err);
@@ -111,7 +111,7 @@ export default function RegisterPage() {
     // Immediately trigger OAuth popup - no async/await delay
     authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: "/onboarding",
     }).catch((err) => {
       console.error(err);
       toast.error("Failed to sign up with Google");
@@ -123,7 +123,7 @@ export default function RegisterPage() {
     // Immediately trigger OAuth popup - no async/await delay
     authClient.signIn.social({
       provider: "github",
-      callbackURL: "/dashboard",
+      callbackURL: "/onboarding",
     }).catch((err) => {
       console.error(err);
       toast.error("Failed to sign up with GitHub");
