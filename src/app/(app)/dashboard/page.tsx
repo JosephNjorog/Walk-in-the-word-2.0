@@ -28,6 +28,7 @@ import { authClient } from "@/lib/auth-client";
 import { BIBLE_BOOKS } from "@/lib/bible-utils";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTranslation, type Lang } from "@/lib/i18n/LanguageProvider";
+import { VerseShareSheet } from "@/components/verse-share-sheet";
 
 const dailyVerse = {
   text: "Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
@@ -81,6 +82,7 @@ export default function HomePage() {
     { id: string; book: string; chapter: number; content: string; createdAt: string }[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -211,7 +213,7 @@ export default function HomePage() {
                 <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-primary">
                   {t("home.verseOfTheDay")}
                 </span>
-                <button className="text-muted-foreground">
+                <button className="text-muted-foreground" onClick={() => setShareOpen(true)}>
                   <Share2 className="h-4 w-4" />
                 </button>
               </div>
@@ -362,6 +364,8 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      <VerseShareSheet open={shareOpen} onOpenChange={setShareOpen} text={dailyVerse.text} reference={dailyVerse.reference} />
     </div>
   );
 }
