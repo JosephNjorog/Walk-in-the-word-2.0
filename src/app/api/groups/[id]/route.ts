@@ -91,6 +91,7 @@ export async function GET(
         memberCount: memberCount?.count || 0,
         isMember: !!membership,
         userRole: membership?.role || null,
+        isMuted: membership?.muted || false,
       },
       members,
     });

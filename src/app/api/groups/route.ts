@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { groups, groupMembers, groupMessages, user } from "@/lib/schema";
-import { eq, and, or, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 // GET - Fetch user's groups
 export async function GET(request: NextRequest) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       .where(eq(groupMembers.userId, userId))
       .orderBy(desc(groups.createdAt));
 
-    // Get member counts for each group
+    // Get member count and most recent message for each group (for the chat list preview)
     const groupsWithCounts = await Promise.all(
       userGroups.map(async (group) => {
         const [memberCount] = await db
@@ -47,9 +47,18 @@ export async function GET(request: NextRequest) {
           .from(groupMembers)
           .where(eq(groupMembers.groupId, group.id));
 
+        const [lastMessage] = await db
+          .select({ content: groupMessages.content, createdAt: groupMessages.createdAt })
+          .from(groupMessages)
+          .where(eq(groupMessages.groupId, group.id))
+          .orderBy(desc(groupMessages.createdAt))
+          .limit(1);
+
         return {
           ...group,
           memberCount: memberCount?.count || 0,
+          lastMessage: lastMessage?.content || null,
+          lastMessageAt: lastMessage?.createdAt || null,
         };
       })
     );
