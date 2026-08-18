@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Heart, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -40,6 +40,20 @@ function initialsFor(name: string) {
 }
 
 export default function PrayerWallPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <PrayerWallPageInner />
+    </Suspense>
+  );
+}
+
+function PrayerWallPageInner() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<"wall" | "testimony">(searchParams.get("tab") === "testimony" ? "testimony" : "wall");

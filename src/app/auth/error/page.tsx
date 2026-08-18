@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -88,6 +88,20 @@ const errorMessages: Record<string, { title: string; description: string; icon: 
 };
 
 export default function AuthErrorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <RefreshCcw className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <AuthErrorPageInner />
+    </Suspense>
+  );
+}
+
+function AuthErrorPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [errorType, setErrorType] = useState<string>("unknown_error");
