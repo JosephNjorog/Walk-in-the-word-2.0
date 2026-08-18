@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { testimonies, user } from "@/lib/schema";
+import { testimonies, testimonyLikes, user } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
@@ -34,7 +35,18 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    return NextResponse.json({ testimonies: results });
+    let likedSet = new Set<string>();
+    if (session) {
+      const myLikes = await db
+        .select({ testimonyId: testimonyLikes.testimonyId })
+        .from(testimonyLikes)
+        .where(eq(testimonyLikes.userId, session.user.id));
+      likedSet = new Set(myLikes.map((r) => r.testimonyId!));
+    }
+
+    return NextResponse.json({
+      testimonies: results.map((t) => ({ ...t, hasLiked: likedSet.has(t.id) })),
+    });
   } catch (error) {
     console.error("Testimonies GET Error:", error);
     return NextResponse.json(
