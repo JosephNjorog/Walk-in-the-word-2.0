@@ -1,49 +1,54 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSubscription } from "@/hooks/use-subscription";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { BookOpen, Plus, Calendar, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface JournalEntry {
   id: string;
   book: string;
   chapter: number;
-  verse: number | null;
   scripture: string | null;
   observation: string | null;
   application: string | null;
   prayer: string | null;
+  isPublic: boolean;
   createdAt: string;
 }
 
+const FIELDS = [
+  { key: "scripture" as const, label: "Scripture", placeholder: "Which verse stood out to you?" },
+  { key: "observation" as const, label: "Observation", placeholder: "What is happening in this passage?" },
+  { key: "application" as const, label: "Application", placeholder: "How does this apply to your life?" },
+  { key: "prayer" as const, label: "Prayer", placeholder: "Turn this into a prayer." },
+];
+
 export default function JournalPage() {
-  const { premium, lifetime } = useSubscription();
+  const searchParams = useSearchParams();
+  const prefilledBook = searchParams.get("book");
+  const prefilledChapter = searchParams.get("chapter");
+
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
 
-  const [formData, setFormData] = useState({
-    book: "",
-    chapter: "",
-    verse: "",
-    scripture: "",
-    observation: "",
-    application: "",
-    prayer: "",
-  });
+  const [book, setBook] = useState(prefilledBook || "");
+  const [chapter, setChapter] = useState(prefilledChapter || "");
+  const [scripture, setScripture] = useState("");
+  const [observation, setObservation] = useState("");
+  const [application, setApplication] = useState("");
+  const [prayer, setPrayer] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
+
+  const isChapterLocked = !!prefilledBook && !!prefilledChapter;
 
   useEffect(() => {
     fetchEntries();
@@ -64,10 +69,7 @@ export default function JournalPage() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.book.trim() || !formData.chapter) {
-      toast.error("Book and chapter are required");
-      return;
-    }
+    if (!book.trim() || !chapter || !scripture.trim()) return;
 
     setSubmitting(true);
     try {
@@ -75,25 +77,28 @@ export default function JournalPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
-          chapter: parseInt(formData.chapter),
-          verse: formData.verse ? parseInt(formData.verse) : null,
+          book: book.trim(),
+          chapter: parseInt(chapter),
+          scripture,
+          observation,
+          application,
+          prayer,
+          isPublic,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to create entry");
-      
+
       toast.success("Journal entry saved!");
-      setDialogOpen(false);
-      setFormData({
-        book: "",
-        chapter: "",
-        verse: "",
-        scripture: "",
-        observation: "",
-        application: "",
-        prayer: "",
-      });
+      setScripture("");
+      setObservation("");
+      setApplication("");
+      setPrayer("");
+      setIsPublic(false);
+      if (!isChapterLocked) {
+        setBook("");
+        setChapter("");
+      }
       fetchEntries();
     } catch (error) {
       toast.error("Failed to save entry");
@@ -103,287 +108,128 @@ export default function JournalPage() {
     }
   };
 
+  const values = { scripture, observation, application, prayer };
+  const setters = { scripture: setScripture, observation: setObservation, application: setApplication, prayer: setPrayer };
+  const canSave = book.trim() && chapter && scripture.trim() && !submitting;
+
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">SOAP Journal</h1>
-            {(premium || lifetime) && (
-              <Badge className="bg-primary">Unlimited</Badge>
-            )}
-          </div>
-          <p className="text-muted-foreground">
-            Scripture • Observation • Application • Prayer
-            {!(premium || lifetime) && " • Free tier: Unlimited entries"}
-          </p>
-        </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Entry
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle>New SOAP Journal Entry</DialogTitle>
-              <DialogDescription>
-                Reflect on Scripture using the SOAP method
-              </DialogDescription>
-            </DialogHeader>
-            
-            <ScrollArea className="max-h-[70vh] pr-4">
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="book">Book *</Label>
-                    <Input
-                      id="book"
-                      placeholder="Genesis"
-                      value={formData.book}
-                      onChange={(e) => setFormData({ ...formData, book: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="chapter">Chapter *</Label>
-                    <Input
-                      id="chapter"
-                      type="number"
-                      placeholder="1"
-                      value={formData.chapter}
-                      onChange={(e) => setFormData({ ...formData, chapter: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="verse">Verse</Label>
-                    <Input
-                      id="verse"
-                      type="number"
-                      placeholder="1"
-                      value={formData.verse}
-                      onChange={(e) => setFormData({ ...formData, verse: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="scripture">📖 Scripture</Label>
-                  <Textarea
-                    id="scripture"
-                    placeholder="Write or paste the verse(s) you're reflecting on..."
-                    value={formData.scripture}
-                    onChange={(e) => setFormData({ ...formData, scripture: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="observation">👁️ Observation</Label>
-                  <Textarea
-                    id="observation"
-                    placeholder="What do you notice about this passage? What stands out?"
-                    value={formData.observation}
-                    onChange={(e) => setFormData({ ...formData, observation: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="application">🎯 Application</Label>
-                  <Textarea
-                    id="application"
-                    placeholder="How does this apply to your life? What changes will you make?"
-                    value={formData.application}
-                    onChange={(e) => setFormData({ ...formData, application: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="prayer">🙏 Prayer</Label>
-                  <Textarea
-                    id="prayer"
-                    placeholder="Turn this passage into a personal prayer..."
-                    value={formData.prayer}
-                    onChange={(e) => setFormData({ ...formData, prayer: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-              </div>
-            </ScrollArea>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting ? "Saving..." : "Save Entry"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:px-10 lg:py-8">
+      <div className="mb-4 flex items-center gap-2.5">
+        <Link href="/read" className="p-1 lg:hidden">
+          <ArrowLeft className="h-[22px] w-[22px] text-foreground" />
+        </Link>
+        <h1 style={{ fontFamily: "var(--font-heading)" }} className="text-xl font-bold text-foreground">
+          SOAP Journal
+        </h1>
       </div>
 
-      {/* Info Card */}
-      <Card className="mb-6 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-        <CardHeader>
-          <CardTitle className="text-lg">What is SOAP?</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <div className="text-2xl mb-1">📖</div>
-            <h4 className="font-semibold mb-1">Scripture</h4>
-            <p className="text-sm text-muted-foreground">Write the verse you're studying</p>
+      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+        {isChapterLocked ? (
+          <div className="text-sm font-bold text-foreground">
+            {book} {chapter}
           </div>
-          <div>
-            <div className="text-2xl mb-1">👁️</div>
-            <h4 className="font-semibold mb-1">Observation</h4>
-            <p className="text-sm text-muted-foreground">What does it say? What stands out?</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <Input placeholder="Book (e.g. Genesis)" value={book} onChange={(e) => setBook(e.target.value)} />
+            <Input placeholder="Chapter" type="number" value={chapter} onChange={(e) => setChapter(e.target.value)} />
           </div>
-          <div>
-            <div className="text-2xl mb-1">🎯</div>
-            <h4 className="font-semibold mb-1">Application</h4>
-            <p className="text-sm text-muted-foreground">How does it apply to your life?</p>
-          </div>
-          <div>
-            <div className="text-2xl mb-1">🙏</div>
-            <h4 className="font-semibold mb-1">Prayer</h4>
-            <p className="text-sm text-muted-foreground">Turn it into a prayer response</p>
-          </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Entries */}
-      {entries.length === 0 ? (
-        <Card className="p-12">
-          <div className="text-center">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Journal Entries Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start your spiritual journey with SOAP journaling!
-            </p>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Entry
-            </Button>
-          </div>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {entries.map((entry) => (
-            <Card 
-              key={entry.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setSelectedEntry(entry)}
+        {FIELDS.map((f) => (
+          <div key={f.key}>
+            <div
+              className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.05em]"
+              style={{ color: f.key === "scripture" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
             >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      {entry.book} {entry.chapter}{entry.verse ? `:${entry.verse}` : ""}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(entry.createdAt), "MMMM d, yyyy")}
-                      <span className="text-xs">
-                        ({formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })})
-                      </span>
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    {entry.scripture && <Badge variant="outline">S</Badge>}
-                    {entry.observation && <Badge variant="outline">O</Badge>}
-                    {entry.application && <Badge variant="outline">A</Badge>}
-                    {entry.prayer && <Badge variant="outline">P</Badge>}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  {entry.scripture && (
-                    <div>
-                      <p className="font-medium mb-1">📖 Scripture</p>
-                      <p className="text-muted-foreground line-clamp-2 italic">"{entry.scripture}"</p>
-                    </div>
-                  )}
-                  {entry.observation && (
-                    <div>
-                      <p className="font-medium mb-1">👁️ Observation</p>
-                      <p className="text-muted-foreground line-clamp-2">{entry.observation}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              {f.label}
+            </div>
+            <Textarea
+              value={values[f.key]}
+              onChange={(e) => setters[f.key](e.target.value)}
+              placeholder={f.placeholder}
+              className="min-h-[44px] resize-none text-sm"
+            />
+          </div>
+        ))}
+
+        <div className="flex items-center justify-between pt-1">
+          <button onClick={() => setIsPublic((p) => !p)} className="flex items-center gap-1.5">
+            <span
+              className="relative h-[19px] w-[34px] rounded-full transition-colors"
+              style={{ background: isPublic ? "hsl(var(--primary))" : "hsl(40 20% 85%)" }}
+            >
+              <span
+                className="absolute top-0.5 h-[15px] w-[15px] rounded-full bg-white transition-all"
+                style={{ left: isPublic ? "18px" : "2px" }}
+              />
+            </span>
+            <span className="text-xs font-semibold text-muted-foreground">Share publicly</span>
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSave}
+            className={cn(
+              "rounded-[10px] bg-primary px-[18px] py-2.5 text-[13.5px] font-bold text-primary-foreground transition-opacity",
+              !canSave && "opacity-50"
+            )}
+          >
+            {submitting ? "Saving…" : "Save Entry"}
+          </button>
         </div>
+      </div>
+
+      {entries.length > 0 && (
+        <>
+          <div className="mb-2.5 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground">Past Entries</div>
+          <div className="flex flex-col gap-2.5">
+            {entries.map((entry) => (
+              <button
+                key={entry.id}
+                onClick={() => setSelectedEntry(entry)}
+                className="rounded-[14px] border border-border bg-card px-4 py-3.5 text-left"
+              >
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-[13.5px] font-bold text-foreground">
+                    {entry.book} {entry.chapter}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{format(new Date(entry.createdAt), "MMM d")}</span>
+                </div>
+                {entry.scripture && (
+                  <div className="line-clamp-2 text-[13px] text-muted-foreground">{entry.scripture}</div>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
-      {/* Entry Detail Dialog */}
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
           {selectedEntry && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
+                <DialogTitle style={{ fontFamily: "var(--font-heading)" }}>
                   {selectedEntry.book} {selectedEntry.chapter}
-                  {selectedEntry.verse && `:${selectedEntry.verse}`}
                 </DialogTitle>
-                <DialogDescription>
-                  {format(new Date(selectedEntry.createdAt), "MMMM d, yyyy 'at' h:mm a")}
-                </DialogDescription>
               </DialogHeader>
-              
-              <ScrollArea className="max-h-[70vh] pr-4">
-                <div className="space-y-4 py-4">
-                  {selectedEntry.scripture && (
-                    <div>
-                      <h4 className="font-semibold mb-2">📖 Scripture</h4>
-                      <p className="text-muted-foreground italic whitespace-pre-wrap">
-                        "{selectedEntry.scripture}"
-                      </p>
+              <div className="space-y-4">
+                {FIELDS.map((f) =>
+                  selectedEntry[f.key] ? (
+                    <div key={f.key}>
+                      <h4 className="mb-1.5 text-xs font-bold uppercase tracking-[0.05em] text-primary">{f.label}</h4>
+                      <p className="whitespace-pre-wrap text-sm text-muted-foreground">{selectedEntry[f.key]}</p>
                     </div>
-                  )}
-                  {selectedEntry.observation && (
-                    <div>
-                      <h4 className="font-semibold mb-2">👁️ Observation</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">
-                        {selectedEntry.observation}
-                      </p>
-                    </div>
-                  )}
-                  {selectedEntry.application && (
-                    <div>
-                      <h4 className="font-semibold mb-2">🎯 Application</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">
-                        {selectedEntry.application}
-                      </p>
-                    </div>
-                  )}
-                  {selectedEntry.prayer && (
-                    <div>
-                      <h4 className="font-semibold mb-2">🙏 Prayer</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">
-                        {selectedEntry.prayer}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+                  ) : null
+                )}
+              </div>
             </>
           )}
         </DialogContent>
