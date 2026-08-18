@@ -17,18 +17,22 @@ import {
   Calendar,
   MessageCircle,
   Flame,
-  Heart,
   Edit,
   Camera,
   Share2,
-  CheckCircle,
   Lock,
   Loader2,
   Save,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { TIERS } from "@/lib/gamification";
+
+interface GamificationData {
+  level: { currentLevel: number; levelName: string; totalXp: number; nextLevelXp: number };
+  badges: { type: string; name: string; letter: string; unlocked: boolean }[];
+  challenges: { id: string; name: string; description: string | null; participantCount: number; goalCount: number; joined: boolean; progress: number }[];
+}
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -36,10 +40,16 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [gamification, setGamification] = useState<GamificationData | null>(null);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProfile();
+    fetch("/api/gamification")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setGamification)
+      .catch(console.error);
   }, []);
 
   const fetchProfile = async () => {
@@ -114,6 +124,31 @@ export default function ProfilePage() {
       toast.error("An error occurred during upload");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleJoinChallenge = async (challengeId: string) => {
+    setJoiningId(challengeId);
+    try {
+      const res = await fetch(`/api/challenges/${challengeId}/join`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      const { joined } = await res.json();
+      setGamification((prev) =>
+        prev
+          ? {
+              ...prev,
+              challenges: prev.challenges.map((c) =>
+                c.id === challengeId
+                  ? { ...c, joined, participantCount: c.participantCount + (joined ? 1 : -1) }
+                  : c
+              ),
+            }
+          : prev
+      );
+    } catch {
+      toast.error("Failed to update challenge");
+    } finally {
+      setJoiningId(null);
     }
   };
 
@@ -287,13 +322,106 @@ export default function ProfilePage() {
             <TabsTrigger value="reflections">Public Reflections</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="achievements">
-             <Card className="border-0 shadow-lg">
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  <Award className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p>Read more chapters to unlock special badges and achievements!</p>
-                </CardContent>
-             </Card>
+          <TabsContent value="achievements" className="space-y-6">
+            {!gamification ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <div className="rounded-[20px] p-[18px] text-white" style={{ background: "var(--purple-gradient)" }}>
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Award className="h-5 w-5" />
+                      <span className="text-base font-bold">{gamification.level.levelName}</span>
+                    </div>
+                    <span className="text-xs opacity-90">
+                      Level {gamification.level.currentLevel} of {TIERS.length}
+                    </span>
+                  </div>
+                  <div className="mb-1.5 h-[7px] overflow-hidden rounded-full bg-white/30">
+                    <div
+                      className="h-full rounded-full bg-white"
+                      style={{
+                        width: `${Math.min(100, gamification.level.nextLevelXp > 0 ? (gamification.level.totalXp / gamification.level.nextLevelXp) * 100 : 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="mb-2.5 text-[11.5px] opacity-90">
+                    {gamification.level.totalXp} / {gamification.level.nextLevelXp} XP
+                  </div>
+                  <div className="flex gap-1">
+                    {TIERS.map((t, i) => {
+                      const active = i + 1 <= gamification.level.currentLevel;
+                      return (
+                        <div
+                          key={t.name}
+                          className="flex-1 rounded-lg py-1 text-center text-[10px] font-bold"
+                          style={{ background: active ? "rgba(255,255,255,.9)" : "rgba(255,255,255,.2)", color: active ? "hsl(258 90% 45%)" : "#fff" }}
+                        >
+                          {t.name}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2.5 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground">Badges</div>
+                  <div className="grid grid-cols-4 gap-3">
+                    {gamification.badges.map((b) => (
+                      <div key={b.type} className="flex flex-col items-center gap-1.5" style={{ opacity: b.unlocked ? 1 : 0.4 }}>
+                        <div
+                          className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+                          style={{ background: b.unlocked ? "var(--blue-gradient)" : "hsl(var(--muted-foreground))" }}
+                        >
+                          {b.unlocked ? <span className="text-lg font-extrabold">{b.letter}</span> : <Lock className="h-[18px] w-[18px]" />}
+                        </div>
+                        <span className="text-center text-[9.5px] font-semibold leading-tight text-muted-foreground">{b.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {gamification.challenges.length > 0 && (
+                  <div>
+                    <div className="mb-2.5 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground">
+                      Community Challenges
+                    </div>
+                    <div className="flex flex-col gap-2.5">
+                      {gamification.challenges.map((c) => (
+                        <div key={c.id} className="rounded-2xl border border-border bg-card p-4">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-sm font-bold text-foreground">{c.name}</span>
+                            <span className="text-[11px] text-muted-foreground">{c.participantCount} joined</span>
+                          </div>
+                          {c.description && <div className="mb-2 text-xs text-muted-foreground">{c.description}</div>}
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className="h-full rounded-full bg-primary"
+                                style={{ width: `${c.goalCount > 0 ? Math.min(100, (c.progress / c.goalCount) * 100) : 0}%` }}
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleJoinChallenge(c.id)}
+                              disabled={joiningId === c.id}
+                              className="flex-shrink-0 rounded-lg px-3 py-1.5 text-[11.5px] font-bold"
+                              style={{
+                                background: c.joined ? "hsl(40 33% 94%)" : "hsl(var(--primary))",
+                                color: c.joined ? "hsl(var(--muted-foreground))" : "#fff",
+                              }}
+                            >
+                              {c.joined ? "Joined" : "Join"}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="reflections">
