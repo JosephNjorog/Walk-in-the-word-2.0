@@ -6,6 +6,7 @@ import Script from "next/script";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { SplashScreen } from "@/components/splash-screen";
+import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
 export const metadata: Metadata = {
   title: "Walk in the Word | Daily Bible Reading & Accountability",
@@ -70,24 +71,26 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body className="min-h-screen">
-        <SplashScreen />
-        {children}
-        <Toaster 
-          position="top-right" 
-          richColors 
-          expand={true}
-          duration={4000}
-          closeButton
-          toastOptions={{
-            style: {
-              padding: '16px',
-              gap: '12px',
-            },
-            className: 'toast-custom',
-          }}
-        />
-        <PWAInstallPrompt />
-        <ServiceWorkerRegister />
+        <LanguageProvider>
+          <SplashScreen />
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            expand={true}
+            duration={4000}
+            closeButton
+            toastOptions={{
+              style: {
+                padding: '16px',
+                gap: '12px',
+              },
+              className: 'toast-custom',
+            }}
+          />
+          <PWAInstallPrompt />
+          <ServiceWorkerRegister />
+        </LanguageProvider>
       </body>
     </html>
   );
