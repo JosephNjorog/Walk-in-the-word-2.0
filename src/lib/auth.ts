@@ -110,6 +110,14 @@ export const auth = betterAuth({
                 type: "date",
                 required: false,
             },
+            hasOnboarded: {
+                type: "boolean",
+                defaultValue: false,
+            },
+            interests: {
+                type: "string",
+                required: false,
+            },
         }
     },
     onAfterSignUp: async (user) => {

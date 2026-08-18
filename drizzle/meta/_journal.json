@@ -22,6 +22,13 @@
       "when": 1787053259903,
       "tag": "0002_zippy_firestar",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787054158269,
+      "tag": "0003_numerous_microbe",
+      "breakpoints": true
     }
   ]
 }

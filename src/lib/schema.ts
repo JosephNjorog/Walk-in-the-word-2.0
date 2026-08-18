@@ -22,7 +22,12 @@ export const user = pgTable('user', {
   level: text('level').default('Seeker'), // Seeker, Disciple, Teacher, Scholar
   isVerified: boolean('is_verified').default(false),
   role: text('role').default('member'), // member, pastor, admin
-  
+  // DB-level default is true so the migration backfill doesn't gate existing
+  // users; better-auth's additionalFields defaultValue:false (see auth.ts)
+  // is what actually applies to newly-created accounts.
+  hasOnboarded: boolean('has_onboarded').default(true),
+  interests: text('interests'), // comma-separated goal keys selected during onboarding
+
   // Subscription fields
   subscriptionTier: text('subscription_tier').default('free'), // free, premium
   subscriptionStatus: text('subscription_status').default('inactive'), // active, inactive, cancelled
