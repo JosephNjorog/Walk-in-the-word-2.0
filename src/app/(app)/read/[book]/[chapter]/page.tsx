@@ -4,16 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -43,6 +37,8 @@ import {
   Sparkles,
   Loader2,
   Search,
+  StickyNote,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Confetti from "react-confetti";
@@ -51,6 +47,7 @@ import { authClient } from "@/lib/auth-client";
 import { useSubscription } from "@/hooks/use-subscription";
 import { toast } from "sonner";
 import { getChapterId, getNavigation } from "@/lib/bible-utils";
+import type { ChapterVerse } from "@/lib/bible";
 
 type Theme = "light" | "sepia" | "dark";
 
@@ -60,20 +57,25 @@ const themeClasses: Record<Theme, string> = {
   dark: "bg-slate-900 text-slate-100",
 };
 
+interface VerseBookmark {
+  id: string;
+  verse: number;
+  color: string | null;
+  note: string | null;
+}
+
 export default function ReadingPage() {
   const params = useParams();
   const book = decodeURIComponent(params.book as string);
   const chapter = params.chapter as string;
   const chapterNum = parseInt(chapter);
-  
+
   const { data: session } = authClient.useSession();
   const { premium, lifetime } = useSubscription();
-  const [bibleId, setBibleId] = useState("9879dbb7cfe39e4d-01"); // WEB - World English Bible
-  const [parallelVersions, setParallelVersions] = useState<string[]>([]);
-  const [parallelContent, setParallelContent] = useState<Record<string, { content: string; reference: string }>>({});
+  const [bibleId, setBibleId] = useState("");
   const [versions, setVersions] = useState<{ id: string; abbreviation: string; name: string }[]>([]);
   const [versionSearch, setVersionSearch] = useState("");
-  const [content, setContent] = useState<{ content: string; reference: string } | null>(null);
+  const [chapterData, setChapterData] = useState<{ content: string; verses: ChapterVerse[]; reference: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userProgress, setUserProgress] = useState<{ chaptersRead: number; streak: number }>({ chaptersRead: 0, streak: 0 });
 
@@ -85,6 +87,10 @@ export default function ReadingPage() {
   const [reflection, setReflection] = useState("");
   const [isShared, setIsShared] = useState(false);
 
+  const [verseMarkers, setVerseMarkers] = useState<Record<number, VerseBookmark>>({});
+  const [editingNoteVerse, setEditingNoteVerse] = useState<number | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
+
   const displayBook = book.charAt(0).toUpperCase() + book.slice(1);
   const navigation = useMemo(() => getNavigation(book, chapterNum), [book, chapterNum]);
 
@@ -95,12 +101,12 @@ export default function ReadingPage() {
         if (!res.ok) throw new Error("Failed to fetch versions");
         const data = await res.json();
         setVersions(data);
-        if ((session?.user as any)?.preferredVersion) {
-          const pref = data.find((v: { abbreviation: string }) => v.abbreviation === (session.user as any).preferredVersion);
-          if (pref) setBibleId(pref.id);
-        }
+        const preferred = (session?.user as any)?.preferredVersion;
+        const match = data.find((v: { abbreviation: string }) => v.abbreviation === preferred);
+        setBibleId(match?.id || data[0]?.id || "KJV");
       } catch (err) {
         console.error(err);
+        setBibleId("KJV");
       }
     }
     fetchVersions();
@@ -114,7 +120,7 @@ export default function ReadingPage() {
         const res = await fetch(`/api/bible/chapter?bibleId=${bibleId}&chapterId=${chapterId}`);
         if (!res.ok) throw new Error("Failed to fetch chapter");
         const data = await res.json();
-        setContent(data);
+        setChapterData(data);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load chapter content");
@@ -122,8 +128,27 @@ export default function ReadingPage() {
         setIsLoading(false);
       }
     }
-    if (book && chapter) fetchContent();
+    if (book && chapter && bibleId) fetchContent();
   }, [book, chapter, bibleId, displayBook]);
+
+  useEffect(() => {
+    async function fetchMarkers() {
+      if (!session) return;
+      try {
+        const res = await fetch(`/api/bookmarks?book=${encodeURIComponent(displayBook)}&chapter=${chapterNum}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const map: Record<number, VerseBookmark> = {};
+        for (const b of data.bookmarks || []) {
+          if (b.verse !== null) map[b.verse] = { id: b.id, verse: b.verse, color: b.color, note: b.note };
+        }
+        setVerseMarkers(map);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchMarkers();
+  }, [session, displayBook, chapterNum]);
 
   useEffect(() => {
     async function fetchProgress() {
@@ -148,21 +173,21 @@ export default function ReadingPage() {
       toast.error("Please sign in to save progress");
       return;
     }
-    
+
     try {
       const res = await fetch("/api/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ book: displayBook, chapter: chapterNum }),
       });
-      
+
       if (!res.ok) throw new Error("Failed to save progress");
-      
+
       setUserProgress(prev => ({
         chaptersRead: prev.chaptersRead + 1,
         streak: prev.streak + 1,
       }));
-      
+
       setShowCompletion(true);
       setTimeout(() => {
         setShowReflection(true);
@@ -178,16 +203,16 @@ export default function ReadingPage() {
       const res = await fetch("/api/reflections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          book: displayBook, 
+        body: JSON.stringify({
+          book: displayBook,
           chapter: chapterNum,
           content: reflection,
           isPublic: isShared
         }),
       });
-      
+
       if (!res.ok) throw new Error("Failed to save reflection");
-      
+
       toast.success("Reflection saved!");
       setShowReflection(false);
       setShowCompletion(false);
@@ -203,7 +228,93 @@ export default function ReadingPage() {
     setVersionSearch("");
   };
 
-  const filteredVersions = versions.filter((v) => 
+  const toggleHighlight = async (v: ChapterVerse) => {
+    if (!session) {
+      toast.error("Please sign in to highlight verses");
+      return;
+    }
+    const existing = verseMarkers[v.verse];
+    try {
+      if (!existing) {
+        const res = await fetch("/api/bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ book: displayBook, chapter: chapterNum, verse: v.verse, verseText: v.text, color: "yellow" }),
+        });
+        const data = await res.json();
+        setVerseMarkers(prev => ({ ...prev, [v.verse]: { id: data.bookmark.id, verse: v.verse, color: data.bookmark.color, note: data.bookmark.note } }));
+      } else if (existing.note) {
+        const res = await fetch("/api/bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ book: displayBook, chapter: chapterNum, verse: v.verse, verseText: v.text, color: existing.color ? null : "yellow" }),
+        });
+        const data = await res.json();
+        setVerseMarkers(prev => ({ ...prev, [v.verse]: { id: data.bookmark.id, verse: v.verse, color: data.bookmark.color, note: data.bookmark.note } }));
+      } else {
+        await fetch(`/api/bookmarks?id=${existing.id}`, { method: "DELETE" });
+        setVerseMarkers(prev => {
+          const next = { ...prev };
+          delete next[v.verse];
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update highlight");
+    }
+  };
+
+  const startNote = (v: ChapterVerse) => {
+    setEditingNoteVerse(v.verse);
+    setNoteDraft(verseMarkers[v.verse]?.note || "");
+  };
+
+  const saveNote = async (v: ChapterVerse) => {
+    try {
+      const res = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ book: displayBook, chapter: chapterNum, verse: v.verse, verseText: v.text, note: noteDraft.trim() || null }),
+      });
+      const data = await res.json();
+      setVerseMarkers(prev => ({ ...prev, [v.verse]: { id: data.bookmark.id, verse: v.verse, color: data.bookmark.color, note: data.bookmark.note } }));
+      setEditingNoteVerse(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save note");
+    }
+  };
+
+  const deleteNote = async (v: ChapterVerse) => {
+    const existing = verseMarkers[v.verse];
+    if (!existing) return;
+    try {
+      if (existing.color) {
+        const res = await fetch("/api/bookmarks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ book: displayBook, chapter: chapterNum, verse: v.verse, verseText: v.text, note: null }),
+        });
+        const data = await res.json();
+        setVerseMarkers(prev => ({ ...prev, [v.verse]: { id: data.bookmark.id, verse: v.verse, color: data.bookmark.color, note: data.bookmark.note } }));
+      } else {
+        await fetch(`/api/bookmarks?id=${existing.id}`, { method: "DELETE" });
+        setVerseMarkers(prev => {
+          const next = { ...prev };
+          delete next[v.verse];
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete note");
+    } finally {
+      setEditingNoteVerse(null);
+    }
+  };
+
+  const filteredVersions = versions.filter((v) =>
     v.name.toLowerCase().includes(versionSearch.toLowerCase()) ||
     v.abbreviation.toLowerCase().includes(versionSearch.toLowerCase())
   );
@@ -230,7 +341,7 @@ export default function ReadingPage() {
             <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <span className="hidden sm:inline">Home</span>
               </Button>
             </Link>
 
@@ -250,7 +361,7 @@ export default function ReadingPage() {
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 text-xs gap-2">
                     <BookOpen className="h-3 w-3" />
-                    {currentVersion?.abbreviation || "WEB"}
+                    {currentVersion?.abbreviation || "..."}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[80vh]">
@@ -377,7 +488,7 @@ export default function ReadingPage() {
             className="space-y-8"
           >
             <div className="text-center mb-12">
-              <p className="text-sm text-muted-foreground mb-2">{content?.reference || `${displayBook} ${chapter}`}</p>
+              <p className="text-sm text-muted-foreground mb-2">{chapterData?.reference || `${displayBook} ${chapter}`}</p>
               <h1
                 className="text-3xl sm:text-4xl font-bold mb-2"
                 style={{ fontFamily: "var(--font-heading)" }}
@@ -387,11 +498,79 @@ export default function ReadingPage() {
               <p className="text-sm text-muted-foreground">~8 min read</p>
             </div>
 
-            <div
-              className="scripture-text leading-relaxed space-y-4"
-              style={{ fontSize: `${fontSize[0]}px` }}
-              dangerouslySetInnerHTML={{ __html: content?.content || "" }}
-            />
+            <div className="space-y-2" style={{ fontSize: `${fontSize[0]}px` }}>
+              {(chapterData?.verses || []).map((v) => {
+                const marker = verseMarkers[v.verse];
+                const isHighlighted = !!marker?.color;
+                const isEditingNote = editingNoteVerse === v.verse;
+                return (
+                  <div key={v.verse}>
+                    <div
+                      className="flex items-start gap-1.5 rounded-lg px-1.5 py-1"
+                      style={{ background: isHighlighted ? "hsl(48 96% 89%)" : "transparent" }}
+                    >
+                      <p
+                        onClick={() => toggleHighlight(v)}
+                        className="scripture-text flex-1 cursor-pointer leading-relaxed"
+                      >
+                        <sup className="mr-1 font-semibold text-primary">{v.verse}</sup>
+                        {v.text}
+                      </p>
+                      <button
+                        onClick={() => startNote(v)}
+                        className="mt-0.5 flex-shrink-0 text-muted-foreground hover:text-secondary"
+                        aria-label="Add note"
+                      >
+                        <StickyNote className={cn("h-3.5 w-3.5", marker?.note && "fill-secondary/20 text-secondary")} />
+                      </button>
+                    </div>
+
+                    {marker?.note && !isEditingNote && (
+                      <button
+                        onClick={() => startNote(v)}
+                        className="ml-2 mt-1 block rounded-lg bg-secondary/10 px-3 py-1.5 text-left text-sm text-secondary"
+                      >
+                        Note: {marker.note}
+                      </button>
+                    )}
+
+                    {isEditingNote && (
+                      <div className="ml-2 mt-1 rounded-lg border bg-card p-2.5">
+                        <Textarea
+                          value={noteDraft}
+                          onChange={(e) => setNoteDraft(e.target.value)}
+                          placeholder="Add a note…"
+                          className="min-h-[50px] resize-none border-none p-0 text-sm shadow-none focus-visible:ring-0"
+                        />
+                        <div className="mt-2 flex justify-end gap-2">
+                          {marker?.note && (
+                            <Button variant="ghost" size="sm" className="h-7 gap-1 text-destructive" onClick={() => deleteNote(v)}>
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="sm" className="h-7" onClick={() => setEditingNoteVerse(null)}>
+                            Cancel
+                          </Button>
+                          <Button size="sm" className="h-7 btn-primary" onClick={() => saveNote(v)}>
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-4">
+              <Link
+                href={`/journal?book=${encodeURIComponent(displayBook)}&chapter=${chapterNum}`}
+                className="block rounded-lg border border-dashed border-primary/40 bg-primary/5 py-2.5 text-center text-xs font-semibold text-primary"
+              >
+                + SOAP Journal Entry
+              </Link>
+            </div>
 
             <div className="pt-8 border-t">
               <motion.div
