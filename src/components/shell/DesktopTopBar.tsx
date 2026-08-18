@@ -19,6 +19,7 @@ const TITLE_MAP: Record<string, string> = {
   "/read": "nav.bible",
   "/community/groups": "nav.groups",
   "/community/prayer": "nav.prayer",
+  "/search": "search.title",
   "/streaks": "nav.streaks",
   "/profile": "nav.profile",
   "/church": "nav.church",

@@ -9,6 +9,9 @@ export const en = {
     church: "Church Account",
     churchAdmin: "Manage Church",
   },
+  search: {
+    title: "Search",
+  },
   common: {
     loading: "Loading…",
     save: "Save",

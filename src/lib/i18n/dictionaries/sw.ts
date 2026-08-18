@@ -11,6 +11,9 @@ export const sw: Dictionary = {
     church: "Akaunti ya Kanisa",
     churchAdmin: "Simamia Kanisa",
   },
+  search: {
+    title: "Tafuta",
+  },
   common: {
     loading: "Inapakia…",
     save: "Hifadhi",
