@@ -69,7 +69,7 @@ const quickAccess = [
   { href: "/journal", labelKey: "SOAP Journal", icon: FileText, bg: "hsl(142 60% 92%)", fg: "hsl(142 60% 32%)" },
   { href: "/community/forums", labelKey: "Forums", icon: MessageCircle, bg: "hsl(24 90% 92%)", fg: "hsl(24 90% 40%)" },
   { href: "/community/groups", labelKey: "Small Groups", icon: Users2, bg: "hsl(330 80% 94%)", fg: "hsl(330 70% 45%)" },
-  { href: "/community/testimonies", labelKey: "Testimonies", icon: Sparkles, bg: "hsl(38 92% 92%)", fg: "hsl(38 92% 38%)" },
+  { href: "/community/prayer?tab=testimony", labelKey: "Testimonies", icon: Sparkles, bg: "hsl(38 92% 92%)", fg: "hsl(38 92% 38%)" },
 ];
 
 export default function HomePage() {
